@@ -42,7 +42,7 @@ class Objects:
                 tile((x, y), (self.visible_sprites, ), cell)
 
         # for alien in self.visible_sprites.sprites():
-        #     print(alien.id)
+        #     print(alien.rect.center)
 
     def create_trees(self):
 
