@@ -5,7 +5,7 @@ import string
 import pygame
 
 from src import settings
-from src.tile import GreenGrass, Sand, Water
+from src.tile import GreenGrass, Sand, Water, Grid
 from src.trees import Trees
 
 
@@ -40,6 +40,8 @@ class Objects:
 
                 tile = random.choices([GreenGrass, Sand, Water], weights=[100, 1, 1], k=1)[0]
                 tile((x, y), (self.visible_sprites, ), cell)
+                Grid((x, y), (self.visible_sprites,))
+
 
         # for alien in self.visible_sprites.sprites():
         #     print(alien.rect.center)
