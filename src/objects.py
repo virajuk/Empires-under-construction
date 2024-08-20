@@ -64,8 +64,6 @@ class Objects:
 
         for location in zip(indices[0], indices[1]):
 
-            # print(location)
-
             Trees((location[0], location[1]), (self.tree_sprites,))
 
         # patch_1 = (int(self.map_size[1]/4), int(self.map_size[0]/4))
