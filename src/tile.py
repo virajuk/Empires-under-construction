@@ -44,5 +44,5 @@ class Grid(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/grid/*.png')
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
-        self.image.set_alpha(40)
+        self.image.set_alpha(20)
         self.rect = self.image.get_rect(topleft=pos)
