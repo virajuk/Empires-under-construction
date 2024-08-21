@@ -55,7 +55,7 @@ class Objects:
 
         noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (28, 15))
 
-        lower_bound, higher_bound = 0.4941, 0.4949
+        lower_bound, higher_bound = 0.4941, 0.4948
 
         combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
         indices = np.where(combined_condition)
