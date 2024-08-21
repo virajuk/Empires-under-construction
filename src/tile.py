@@ -3,6 +3,7 @@ import random
 from glob import glob
 import pygame
 
+from src import settings
 
 class GreenGrass(pygame.sprite.Sprite):
 
@@ -11,9 +12,9 @@ class GreenGrass(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/grass/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
+        self.image = pygame.transform.scale(self.image,(settings.TILE_SIZE, settings.TILE_SIZE))
         self.rect = self.image.get_rect(topleft=pos)
         self.id = id
-
 
 class Sand(pygame.sprite.Sprite):
 
@@ -44,5 +45,6 @@ class Grid(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/grid/*.png')
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
         self.image.set_alpha(20)
         self.rect = self.image.get_rect(topleft=pos)
