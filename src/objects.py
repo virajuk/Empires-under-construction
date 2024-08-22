@@ -52,8 +52,8 @@ class Objects:
 
     def digging_ponds(self):
 
-        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (14, 7))
-        lower_bound, higher_bound = 0.4941, 0.5679
+        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (28, 14))
+        lower_bound, higher_bound = 0.4641, 0.5679
         combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
         indices = np.where(combined_condition)
         print(len(indices[0]))
