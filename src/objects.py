@@ -53,16 +53,17 @@ class Objects:
         # noise = generate_fractal_noise_2d((settings.WIDTH, settings.HEIGHT), (8, 6), 5)
         # noise = generate_fractal_noise_2d((settings.WIDTH, settings.HEIGHT), (8, 6))
 
-        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (28, 15))
+        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (14, 7))
 
-        lower_bound, higher_bound = 0.4941, 0.4948
+        lower_bound, higher_bound = 0.4943, 0.4944
 
         combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
         indices = np.where(combined_condition)
 
+        print(len(indices[0]))
         for location in zip(indices[0], indices[1]):
 
-            x,y = (int(location[0]/settings.TILE_SIZE)*settings.TILE_SIZE), (int(location[1]/settings.TILE_SIZE)*settings.TILE_SIZE)
+            x,y = int(location[0]/settings.TILE_SIZE)*settings.TILE_SIZE, int(location[1]/settings.TILE_SIZE)*settings.TILE_SIZE
             Trees((x, y), (self.tree_sprites,))
 
 
