@@ -34,6 +34,7 @@ class Water(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/water/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
         self.rect = self.image.get_rect(topleft=pos)
         self.id = id
 
