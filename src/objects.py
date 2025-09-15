@@ -24,7 +24,7 @@ class Objects:
         self.tree_sprites = pygame.sprite.Group()
 
         self.create_map()
-        self.digging_ponds()
+        # self.digging_ponds()
 
         # self.plant_trees()
 
@@ -52,7 +52,7 @@ class Objects:
 
     def digging_ponds(self):
 
-        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (28, 14))
+        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (32, 24))
         lower_bound, higher_bound = 0.4641, 0.5679
         combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
         indices = np.where(combined_condition)
