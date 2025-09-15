@@ -44,7 +44,7 @@ class Grid(pygame.sprite.Sprite):
     def __init__(self, pos, groups):
 
         super().__init__(groups)
-        self.images = glob('graphics/grid/*.png')
+        self.images = glob('graphics/grid/grid.png')
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
         self.image.set_alpha(20)
