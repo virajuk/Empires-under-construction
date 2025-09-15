@@ -27,6 +27,15 @@ def generate_perlin_noise_2d(
     Raises:
         ValueError: If shape is not a multiple of res.
     """
+    # Validate inputs: shape must be an exact multiple of res, otherwise
+    # NumPy broadcasting errors will occur later. Raise a clear error early.
+    if shape[0] % res[0] != 0 or shape[1] % res[1] != 0:
+        raise ValueError(
+            f"shape must be a multiple of res: got shape={shape}, res={res}. "
+            f"For example, choose res=({max(1, shape[0]//64)}, {max(1, shape[1]//64)}) "
+            f"or adjust shape so both dimensions are divisible by res."
+        )
+
     delta = (res[0] / shape[0], res[1] / shape[1])
     d = (shape[0] // res[0], shape[1] // res[1])
     grid = np.mgrid[0:res[0]:delta[0], 0:res[1]:delta[1]]\
@@ -84,6 +93,15 @@ def generate_fractal_noise_2d(
         ValueError: If shape is not a multiple of
             (lacunarity**(octaves-1)*res).
     """
+    # Effective resolution grows as lacunarity**(octaves-1) * res; ensure shape
+    # is divisible to avoid cryptic broadcasting errors in inner calls.
+    eff_res = (int((lacunarity**(octaves-1)) * res[0]), int((lacunarity**(octaves-1)) * res[1]))
+    if shape[0] % eff_res[0] != 0 or shape[1] % eff_res[1] != 0:
+        raise ValueError(
+            "shape must be a multiple of (lacunarity**(octaves-1) * res). "
+            f"Got shape={shape}, res={res}, octaves={octaves}, lacunarity={lacunarity} -> eff_res={eff_res}."
+        )
+
     noise = np.zeros(shape)
     frequency = 1
     amplitude = 1

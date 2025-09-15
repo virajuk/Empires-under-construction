@@ -24,7 +24,9 @@ class Objects:
         self.tree_sprites = pygame.sprite.Group()
 
         self.create_map()
-        self.plant_trees()
+        # self.digging_ponds()
+
+        # self.plant_trees()
 
     def create_map(self):
 
@@ -46,6 +48,19 @@ class Objects:
                 tile((x, y), (self.visible_sprites, ), cell)
 
                 Grid((x, y), (self.visible_sprites,))
+
+
+    def digging_ponds(self):
+
+        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (32, 24))
+        lower_bound, higher_bound = 0.4641, 0.5679
+        combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
+        indices = np.where(combined_condition)
+        print(len(indices[0]))
+
+        for location in zip(indices[0], indices[1]):
+            x, y = int(location[0] / settings.TILE_SIZE) * settings.TILE_SIZE, int(location[1] / settings.TILE_SIZE) * settings.TILE_SIZE
+            Water((x, y), (self.visible_sprites,), "asd")
 
 
     def plant_trees(self):
@@ -71,8 +86,3 @@ class Objects:
 
         self.visible_sprites.draw(self.display_surface)
         self.tree_sprites.draw(self.display_surface)
-
-        # for one in self.visible_sprites:
-        #
-        #     if isinstance(one,GreenGrass):
-        #         print(one.id)
