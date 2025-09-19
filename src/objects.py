@@ -32,10 +32,11 @@ class Objects:
         self.create_map()
         # self.digging_ponds()
 
-        # Create animated player at center of screen
-        player_x = settings.WIDTH // 2
-        player_y = settings.HEIGHT // 2
-        self.player = AnimatedPlayer((player_x, player_y), (self.player_sprites,))
+        # Create two animated players at different random tile centers
+        if self.cell_labels and len(self.cell_labels) > 1:
+            cell_choices = random.sample(self.cell_labels, 2)
+            for cell_id, (center_x, center_y) in cell_choices:
+                AnimatedPlayer((center_x, center_y), (self.player_sprites,))
 
         # self.plant_trees()
 

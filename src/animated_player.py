@@ -1,4 +1,5 @@
 import pygame
+import random
 from glob import glob
 from src import settings
 
@@ -27,12 +28,18 @@ class AnimatedPlayer(pygame.sprite.Sprite):
             self.image = pygame.Surface((settings.TILE_SIZE, settings.TILE_SIZE))
             self.image.fill((255, 0, 0))  # Red square
             
-        self.rect = self.image.get_rect(topleft=pos)
+        self.rect = self.image.get_rect(center=pos)
         
         # Movement
         self.direction = pygame.math.Vector2()
         self.speed = 2
         self.is_moving = False
+
+        # Autonomous movement state
+        self.ai_mode = True  # Set to True for random movement
+        self.ai_next_change = 0
+        self.ai_move_duration = 0
+        self.ai_directions = ['up', 'down', 'left', 'right', 'idle']
 
     def load_walk_frames(self):
         """Load walking animation frames from graphics/sprite/ organized by direction"""
@@ -94,39 +101,60 @@ class AnimatedPlayer(pygame.sprite.Sprite):
 
     def update(self):
         """Update animation and movement"""
-        
-        # Handle input and determine direction
-        keys = pygame.key.get_pressed()
-        self.direction.x = 0
-        self.direction.y = 0
-        
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.direction.x = -1
-            self.current_direction = 'left'
-        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.direction.x = 1
-            self.current_direction = 'right'
-        elif keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.direction.y = -1
-            self.current_direction = 'up'
-        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.direction.y = 1
-            self.current_direction = 'down'
-            
+        now = pygame.time.get_ticks()
+        if self.ai_mode:
+            # Autonomous random movement
+            if now > self.ai_next_change:
+                direction = random.choice(self.ai_directions)
+                if direction == 'up':
+                    self.direction.x, self.direction.y = 0, -1
+                    self.current_direction = 'up'
+                elif direction == 'down':
+                    self.direction.x, self.direction.y = 0, 1
+                    self.current_direction = 'down'
+                elif direction == 'left':
+                    self.direction.x, self.direction.y = -1, 0
+                    self.current_direction = 'left'
+                elif direction == 'right':
+                    self.direction.x, self.direction.y = 1, 0
+                    self.current_direction = 'right'
+                else:
+                    self.direction.x, self.direction.y = 0, 0
+                # Next direction change in 0.5-2 seconds
+                self.ai_move_duration = random.randint(500, 2000)
+                self.ai_next_change = now + self.ai_move_duration
+        else:
+            # Handle input and determine direction
+            keys = pygame.key.get_pressed()
+            self.direction.x = 0
+            self.direction.y = 0
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                self.direction.x = -1
+                self.current_direction = 'left'
+            elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                self.direction.x = 1
+                self.current_direction = 'right'
+            elif keys[pygame.K_UP] or keys[pygame.K_w]:
+                self.direction.y = -1
+                self.current_direction = 'up'
+            elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                self.direction.y = 1
+                self.current_direction = 'down'
+
         # Check if moving
         self.is_moving = self.direction.magnitude() > 0
-        
+
         # Normalize diagonal movement
         if self.direction.magnitude() > 0:
             self.direction = self.direction.normalize()
-            
+
         # Update position
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
-        
+
         # Keep player on screen
         self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
-        
+
         # Animate only when moving
         current_frames = self.frames[self.current_direction]
         if self.is_moving and current_frames:
