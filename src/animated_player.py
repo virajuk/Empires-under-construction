@@ -5,6 +5,7 @@ from src import settings
 
 
 class AnimatedPlayer(pygame.sprite.Sprite):
+    
     """
     Animated player sprite with walking animation.
     Supports both sprite sheets and individual frame files.
@@ -19,7 +20,9 @@ class AnimatedPlayer(pygame.sprite.Sprite):
         self.frames = {'up': [], 'left': [], 'down': [], 'right': []}
         self.current_direction = 'down'  # Default facing direction
         self.load_walk_frames()
-        
+        # Health
+        self.health = 100  # Max 100
+
         # Set initial image
         if any(self.frames.values()):
             self.image = self.frames[self.current_direction][0] if self.frames[self.current_direction] else list(self.frames.values())[0][0]
@@ -29,6 +32,8 @@ class AnimatedPlayer(pygame.sprite.Sprite):
             self.image.fill((255, 0, 0))  # Red square
             
         self.rect = self.image.get_rect(center=pos)
+        # track previous rect for collision reversion
+        self.prev_rect = self.rect.copy()
         
         # Movement
         self.direction = pygame.math.Vector2()
@@ -40,6 +45,23 @@ class AnimatedPlayer(pygame.sprite.Sprite):
         self.ai_next_change = 0
         self.ai_move_duration = 0
         self.ai_directions = ['up', 'down', 'left', 'right', 'idle']
+
+        # Reverse direction flag
+        self.reverse_next_move = False
+
+    def draw_health_bar(self, surface):
+        bar_width = settings.TILE_SIZE
+        bar_height = 8
+        bar_x = self.rect.centerx - bar_width // 2
+        bar_y = self.rect.top
+        # Background
+        pygame.draw.rect(surface, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+        # Health amount
+        health_ratio = max(0, min(1, self.health / 100))
+        fill_width = int(bar_width * health_ratio)
+        pygame.draw.rect(surface, (200, 40, 40), (bar_x, bar_y, fill_width, bar_height))
+        # Border
+        pygame.draw.rect(surface, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 1)
 
     def load_walk_frames(self):
         """Load walking animation frames from graphics/sprite/ organized by direction"""
@@ -102,6 +124,22 @@ class AnimatedPlayer(pygame.sprite.Sprite):
     def update(self):
         """Update animation and movement"""
         now = pygame.time.get_ticks()
+        if self.reverse_next_move:
+            # Reverse direction vector and current_direction
+            if self.direction.x == 1:
+                self.direction.x = -1
+                self.current_direction = 'left'
+            elif self.direction.x == -1:
+                self.direction.x = 1
+                self.current_direction = 'right'
+            elif self.direction.y == 1:
+                self.direction.y = -1
+                self.current_direction = 'up'
+            elif self.direction.y == -1:
+                self.direction.y = 1
+                self.current_direction = 'down'
+            self.reverse_next_move = False
+
         if self.ai_mode:
             # Autonomous random movement
             if now > self.ai_next_change:
@@ -148,12 +186,21 @@ class AnimatedPlayer(pygame.sprite.Sprite):
         if self.direction.magnitude() > 0:
             self.direction = self.direction.normalize()
 
+        # Store old position for collision/bounds check (used to revert on obstacle collision)
+        self.prev_rect = self.rect.copy()
+
         # Update position
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
 
-        # Keep player on screen
-        self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
+        # Check for collision with outer bounds
+        out_of_bounds = False
+        if self.rect.left < 0 or self.rect.right > settings.WIDTH or self.rect.top < 0 or self.rect.bottom > settings.HEIGHT:
+            out_of_bounds = True
+            self.health = max(0, self.health - 5)
+            # Clamp to screen
+            self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
+            self.reverse_next_move = True
 
         # Animate only when moving
         current_frames = self.frames[self.current_direction]
