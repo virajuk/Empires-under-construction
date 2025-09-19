@@ -8,6 +8,7 @@ import numpy as np
 from src import settings
 from src.tile import GreenGrass, Sand, Water, Grid
 from src.trees import Trees
+from src.animated_player import AnimatedPlayer
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
@@ -22,6 +23,7 @@ class Objects:
         self.obstacles_sprites = pygame.sprite.Group()
 
         self.tree_sprites = pygame.sprite.Group()
+        self.player_sprites = pygame.sprite.Group()
 
         self.cell_labels = []  # Store (id, (x, y)) for each tile
         self.selected_cell_idx = None  # Index of currently selected cell
@@ -29,6 +31,11 @@ class Objects:
 
         self.create_map()
         # self.digging_ponds()
+
+        # Create animated player at center of screen
+        player_x = settings.WIDTH // 2
+        player_y = settings.HEIGHT // 2
+        self.player = AnimatedPlayer((player_x, player_y), (self.player_sprites,))
 
         # self.plant_trees()
 
@@ -99,42 +106,46 @@ class Objects:
 
     def run(self):
 
+        # Update player animation and movement
+        self.player_sprites.update()
+
         self.visible_sprites.draw(self.display_surface)
         # self.tree_sprites.draw(self.display_surface)
+        self.player_sprites.draw(self.display_surface)
+        
+        # # Render cell ids on top of each tile
+        # font = pygame.font.SysFont(None, max(16, settings.TILE_SIZE // 3))
+        # current_time = pygame.time.get_ticks()
+        # # Pick first cell randomly, then move to a random neighbor each second
+        # if self.cell_labels:
+        #     if self.selected_cell_idx is None:
+        #         # Pick a random starting cell
+        #         self.selected_cell_idx = random.randint(0, len(self.cell_labels) - 1)
+        #         self.last_cell_change = current_time
+        #     elif current_time - self.last_cell_change >= 1000:
+        #         # Move to a random neighbor
+        #         row = self.selected_cell_idx // self.grid_cols
+        #         col = self.selected_cell_idx % self.grid_cols
+        #         direction = random.choice(['up', 'down', 'left', 'right'])
+        #         if direction == 'up':
+        #             row = (row - 1) % self.grid_rows
+        #         elif direction == 'down':
+        #             row = (row + 1) % self.grid_rows
+        #         elif direction == 'left':
+        #             col = (col - 1) % self.grid_cols
+        #         elif direction == 'right':
+        #             col = (col + 1) % self.grid_cols
+        #         self.selected_cell_idx = row * self.grid_cols + col
+        #         self.last_cell_change = current_time
 
-        # Render cell ids on top of each tile
-        font = pygame.font.SysFont(None, max(16, settings.TILE_SIZE // 3))
-        current_time = pygame.time.get_ticks()
-        # Pick first cell randomly, then move to a random neighbor each second
-        if self.cell_labels:
-            if self.selected_cell_idx is None:
-                # Pick a random starting cell
-                self.selected_cell_idx = random.randint(0, len(self.cell_labels) - 1)
-                self.last_cell_change = current_time
-            elif current_time - self.last_cell_change >= 1000:
-                # Move to a random neighbor
-                row = self.selected_cell_idx // self.grid_cols
-                col = self.selected_cell_idx % self.grid_cols
-                direction = random.choice(['up', 'down', 'left', 'right'])
-                if direction == 'up':
-                    row = (row - 1) % self.grid_rows
-                elif direction == 'down':
-                    row = (row + 1) % self.grid_rows
-                elif direction == 'left':
-                    col = (col - 1) % self.grid_cols
-                elif direction == 'right':
-                    col = (col + 1) % self.grid_cols
-                self.selected_cell_idx = row * self.grid_cols + col
-                self.last_cell_change = current_time
+        #     cell_id, (center_x, center_y) = self.cell_labels[self.selected_cell_idx]
+        #     # Render cell ID
+        #     id_surface = font.render(cell_id, True, (0, 0, 0))
+        #     id_rect = id_surface.get_rect(center=(center_x, center_y - 8))
+        #     self.display_surface.blit(id_surface, id_rect)
 
-            cell_id, (center_x, center_y) = self.cell_labels[self.selected_cell_idx]
-            # Render cell ID
-            id_surface = font.render(cell_id, True, (0, 0, 0))
-            id_rect = id_surface.get_rect(center=(center_x, center_y - 8))
-            self.display_surface.blit(id_surface, id_rect)
-
-            # Render coordinates
-            coord_text = f"({center_x},{center_y})"
-            coord_surface = font.render(coord_text, True, (0, 0, 0))
-            coord_rect = coord_surface.get_rect(center=(center_x, center_y + 8))
-            self.display_surface.blit(coord_surface, coord_rect)
+        #     # Render coordinates
+        #     coord_text = f"({center_x},{center_y})"
+        #     coord_surface = font.render(coord_text, True, (0, 0, 0))
+        #     coord_rect = coord_surface.get_rect(center=(center_x, center_y + 8))
+        #     self.display_surface.blit(coord_surface, coord_rect)
