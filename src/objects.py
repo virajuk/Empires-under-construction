@@ -16,6 +16,9 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 class Objects:
 
     def __init__(self):
+        # Game stats (must be set before any method that uses them)
+        self.score = 0
+        self.resources = 0
 
         self.display_surface = pygame.display.get_surface()
 
@@ -110,43 +113,22 @@ class Objects:
         # Update player animation and movement
         self.player_sprites.update()
 
+        # Draw world (grass, sprites) in area 0 to settings.HEIGHT
+        world_clip = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
+        prev_clip = self.display_surface.get_clip()
+        self.display_surface.set_clip(world_clip)
         self.visible_sprites.draw(self.display_surface)
         # self.tree_sprites.draw(self.display_surface)
         self.player_sprites.draw(self.display_surface)
-        
-        # # Render cell ids on top of each tile
-        # font = pygame.font.SysFont(None, max(16, settings.TILE_SIZE // 3))
-        # current_time = pygame.time.get_ticks()
-        # # Pick first cell randomly, then move to a random neighbor each second
-        # if self.cell_labels:
-        #     if self.selected_cell_idx is None:
-        #         # Pick a random starting cell
-        #         self.selected_cell_idx = random.randint(0, len(self.cell_labels) - 1)
-        #         self.last_cell_change = current_time
-        #     elif current_time - self.last_cell_change >= 1000:
-        #         # Move to a random neighbor
-        #         row = self.selected_cell_idx // self.grid_cols
-        #         col = self.selected_cell_idx % self.grid_cols
-        #         direction = random.choice(['up', 'down', 'left', 'right'])
-        #         if direction == 'up':
-        #             row = (row - 1) % self.grid_rows
-        #         elif direction == 'down':
-        #             row = (row + 1) % self.grid_rows
-        #         elif direction == 'left':
-        #             col = (col - 1) % self.grid_cols
-        #         elif direction == 'right':
-        #             col = (col + 1) % self.grid_cols
-        #         self.selected_cell_idx = row * self.grid_cols + col
-        #         self.last_cell_change = current_time
+        self.display_surface.set_clip(prev_clip)
 
-        #     cell_id, (center_x, center_y) = self.cell_labels[self.selected_cell_idx]
-        #     # Render cell ID
-        #     id_surface = font.render(cell_id, True, (0, 0, 0))
-        #     id_rect = id_surface.get_rect(center=(center_x, center_y - 8))
-        #     self.display_surface.blit(id_surface, id_rect)
+        # Draw bottom panel in area settings.HEIGHT to settings.SCREEN_HEIGHT
+        panel_rect = pygame.Rect(0, settings.HEIGHT, settings.WIDTH, settings.PANEL_HEIGHT)
+        pygame.draw.rect(self.display_surface, (40, 40, 40), panel_rect)
+        pygame.draw.line(self.display_surface, (100, 100, 100), (0, settings.HEIGHT), (settings.WIDTH, settings.HEIGHT), 2)
 
-        #     # Render coordinates
-        #     coord_text = f"({center_x},{center_y})"
-        #     coord_surface = font.render(coord_text, True, (0, 0, 0))
-        #     coord_rect = coord_surface.get_rect(center=(center_x, center_y + 8))
-        #     self.display_surface.blit(coord_surface, coord_rect)
+        font = pygame.font.SysFont(None, 32)
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        resources_text = font.render(f"Resources: {self.resources}", True, (255, 255, 255))
+        self.display_surface.blit(score_text, (16, settings.HEIGHT + 8))
+        self.display_surface.blit(resources_text, (220, settings.HEIGHT + 8))

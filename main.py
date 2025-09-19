@@ -17,10 +17,9 @@ class Game:
         """
 
         pygame.init()
-        self.screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+        self.screen = pygame.display.set_mode((settings.WIDTH, settings.SCREEN_HEIGHT))
         pygame.display.set_caption("EMPIRES")
         self.clock = pygame.time.Clock()
-
         self.objects = Objects()
 
     def run(self):
