@@ -11,7 +11,7 @@ class AnimatedPlayer(pygame.sprite.Sprite):
     Supports both sprite sheets and individual frame files.
     """
 
-    def __init__(self, pos, groups):
+    def __init__(self, pos, groups, start_cell=None):
         super().__init__(groups)
         
         # Animation properties
@@ -48,6 +48,11 @@ class AnimatedPlayer(pygame.sprite.Sprite):
 
         # Reverse direction flag
         self.reverse_next_move = False
+
+        # Per-player scoring: total score and last visited cell id
+        self.score = 0
+        # Initialize last cell to the starting cell so initial spawn doesn't score
+        self.last_cell_id = start_cell
 
     def draw_health_bar(self, surface):
         bar_width = settings.TILE_SIZE
@@ -188,7 +193,7 @@ class AnimatedPlayer(pygame.sprite.Sprite):
 
         # Store old position for collision/bounds check (used to revert on obstacle collision)
         self.prev_rect = self.rect.copy()
-        
+
         # Update position
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed

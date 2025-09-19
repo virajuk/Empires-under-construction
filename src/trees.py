@@ -6,6 +6,7 @@ import pygame
 from src import settings
 
 class Trees(pygame.sprite.Sprite):
+    
     # Cache frames per sheet path to avoid reloading/splitting for each instance
     _frames_cache = {}
 

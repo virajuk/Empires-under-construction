@@ -39,9 +39,24 @@ class Objects:
         if self.cell_labels and len(self.cell_labels) > 1:
             cell_choices = random.sample(self.cell_labels, 2)
             for cell_id, (center_x, center_y) in cell_choices:
-                AnimatedPlayer((center_x, center_y), (self.player_sprites,))
+                AnimatedPlayer((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
 
         self.plant_trees()
+
+    def reset(self):
+        """Respawn players only: remove existing players and spawn two new ones.
+
+        Keep map, trees, and stats intact.
+        """
+        # Kill existing players
+        for p in list(self.player_sprites):
+            p.kill()
+
+        # Spawn two players again at random tiles
+        if self.cell_labels and len(self.cell_labels) > 1:
+            cell_choices = random.sample(self.cell_labels, 2)
+            for cell_id, (center_x, center_y) in cell_choices:
+                AnimatedPlayer((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
 
     def create_map(self):
         """
@@ -143,10 +158,8 @@ class Objects:
                     if hasattr(players[j], 'reverse_next_move'):
                         players[j].reverse_next_move = True
 
-        # Remove dead players (health <= 0)
-        for player in players:
-            if hasattr(player, 'health') and player.health <= 0:
-                player.kill()
+        # (Previously we reset the whole world when any player died.)
+        # Now we handle death replacement per-player after obstacle collisions below.
 
         # Prevent players from entering obstacle tiles (trees)
         for player in list(self.player_sprites):
@@ -161,6 +174,18 @@ class Objects:
                     player.health = max(0, player.health - 5)
                 if hasattr(player, 'reverse_next_move'):
                     player.reverse_next_move = True
+
+        # Replace any dead players individually (kill and spawn a new player at a random tile)
+        # Recompute current players list
+        players_after = list(self.player_sprites)
+        for player in players_after:
+            if hasattr(player, 'health') and player.health <= 0:
+                # Kill the dead player sprite
+                player.kill()
+                # Spawn a replacement at a random cell
+                if self.cell_labels:
+                    cell_id, (cx, cy) = random.choice(self.cell_labels)
+                    AnimatedPlayer((cx, cy), (self.player_sprites,), start_cell=cell_id)
 
         # Draw world (grass, sprites) in area 0 to settings.HEIGHT
         world_clip = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
@@ -187,18 +212,25 @@ class Objects:
         self.display_surface.blit(score_text, (16, settings.HEIGHT + 8))
         self.display_surface.blit(resources_text, (220, settings.HEIGHT + 8))
 
-        # Show each player's cell id in the panel, styled like score/resources
-        player_ids = []
-        for player in self.player_sprites:
+        # Show each player's cell id and score in the panel, styled like score/resources
+        for idx, player in enumerate(self.player_sprites):
             # Find closest cell label to player center
             px, py = player.rect.center
             closest = min(self.cell_labels, key=lambda c: (c[1][0] - px) ** 2 + (c[1][1] - py) ** 2)
-            player_ids.append(closest[0])
-        # Display horizontally, similar to score/resources
-        for idx, pid in enumerate(player_ids):
-            label = f"Player {idx+1}: {pid}"
+            current_cell = closest[0]
+
+            # Increment player's score when they enter a new cell (don't count initial spawn)
+            if hasattr(player, 'last_cell_id'):
+                if player.last_cell_id is None:
+                    player.last_cell_id = current_cell
+                elif player.last_cell_id != current_cell:
+                    player.score = getattr(player, 'score', 0) + 1
+                    player.last_cell_id = current_cell
+
+            # Render label and score
+            label = f"Player {idx+1}: {current_cell}  Score: {getattr(player, 'score', 0)}"
             pid_text = font.render(label, True, (0, 255, 255))
             # Place after resources, with spacing
-            text_x = 420 + idx * 200
+            text_x = 420 + idx * 300
             text_y = settings.HEIGHT + 8
             self.display_surface.blit(pid_text, (text_x, text_y))
