@@ -188,7 +188,7 @@ class AnimatedPlayer(pygame.sprite.Sprite):
 
         # Store old position for collision/bounds check (used to revert on obstacle collision)
         self.prev_rect = self.rect.copy()
-
+        
         # Update position
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
