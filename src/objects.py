@@ -6,9 +6,10 @@ import pygame
 import numpy as np
 
 from src import settings
-from src.tile import GreenGrass, Sand, Water, Grid
-from src.trees import Trees
+from src.tile import GreenGrass, Sand, Water, Grid, Home
+from src.trees import Tree
 from src.animated_player import AnimatedPlayer
+from src.villager import Villager
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
@@ -33,15 +34,25 @@ class Objects:
         self.last_cell_change = 0  # Timestamp for cell selection
 
         self.create_map()
-        # self.digging_ponds()
+
+        # self.add_2_players()
+
+        self.add_villager()
+
+    def add_villager(self):
+
+        # Create a villager at a random tile center
+        if self.cell_labels:
+            cell_id, (center_x, center_y) = random.choice(self.cell_labels)
+            Villager((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
+
+    def add_2_players(self):
 
         # Create two animated players at different random tile centers
         if self.cell_labels and len(self.cell_labels) > 1:
             cell_choices = random.sample(self.cell_labels, 2)
             for cell_id, (center_x, center_y) in cell_choices:
                 AnimatedPlayer((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
-
-        self.plant_trees()
 
     def reset(self):
         """Respawn players only: remove existing players and spawn two new ones.
@@ -94,8 +105,16 @@ class Objects:
                     tile_type = world_map[row_idx][col_idx]
 
                 # Place GreenGrass on 'grass' tiles and also beneath trees so trees overlay transparently
-                if tile_type in ('grass', 'tree') or tile_type is None:
-                    GreenGrass((x, y), (self.visible_sprites,), cell)
+                # if tile_type in ('grass', 'tree') or tile_type is None:
+                GreenGrass((x, y), (self.visible_sprites,), cell)
+
+                # Place trees on 'tree' tiles
+                if tile_type in ('tree'):
+                    Tree((x, y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    
+                # Place home on 'home' tiles
+                if tile_type in ('home'):
+                    Home((x, y), (self.visible_sprites, self.obstacles_sprites), cell)
 
                 # Always draw the grid overlay
                 Grid((x, y), (self.visible_sprites,))
@@ -108,37 +127,6 @@ class Objects:
         self.grid_rows = rows
         self.grid_cols = cols
 
-
-    def digging_ponds(self):
-
-        noise = generate_perlin_noise_2d((settings.WIDTH, settings.HEIGHT), (32, 24))
-        lower_bound, higher_bound = 0.4641, 0.5679
-        combined_condition = np.logical_and(noise >= lower_bound, noise <= higher_bound)
-        indices = np.where(combined_condition)
-        print(len(indices[0]))
-
-        for location in zip(indices[0], indices[1]):
-            x = int(location[1] / settings.TILE_SIZE) * settings.TILE_SIZE
-            y = int(location[0] / settings.TILE_SIZE) * settings.TILE_SIZE
-            Water((x, y), (self.visible_sprites,), "asd")
-
-
-    def plant_trees(self):
-
-        # Prefer placing trees from WORLD_MAP if it contains 'tree' entries
-        world_map = getattr(settings, 'WORLD_MAP', None)
-        if world_map:
-            for row_idx, row in enumerate(world_map):
-                for col_idx, val in enumerate(row):
-                    if val == 'tree':
-                        x = col_idx * settings.TILE_SIZE
-                        y = row_idx * settings.TILE_SIZE
-                        # Instantiate tree and ensure it's added to both visible tree group and obstacles
-                        tree = Trees((x, y), (self.tree_sprites,))
-                        # Also add to obstacles so players cannot enter that tile
-                        self.obstacles_sprites.add(tree)
-
-    
     def run(self):
 
         # Update player animation and movement
@@ -172,6 +160,7 @@ class Objects:
                 # Hurt player and reverse next move
                 if hasattr(player, 'health'):
                     player.health = max(0, player.health - 5)
+                # Always reverse direction for Villager and AnimatedPlayer
                 if hasattr(player, 'reverse_next_move'):
                     player.reverse_next_move = True
 
@@ -227,8 +216,9 @@ class Objects:
                     player.score = getattr(player, 'score', 0) + 1
                     player.last_cell_id = current_cell
 
-            # Render label and score
-            label = f"Player {idx+1}: {current_cell}  Score: {getattr(player, 'score', 0)}"
+            # Show class name (type) in label
+            class_name = type(player).__name__
+            label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(player, 'score', 0)}"
             pid_text = font.render(label, True, (0, 255, 255))
             # Place after resources, with spacing
             text_x = 420 + idx * 300

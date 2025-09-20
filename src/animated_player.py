@@ -59,6 +59,12 @@ class AnimatedPlayer(pygame.sprite.Sprite):
         bar_height = 8
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top
+        # Show class name above health bar
+        font = pygame.font.SysFont(None, 16)
+        class_name = type(self).__name__
+        text = font.render(class_name, True, (255, 255, 255))
+        text_rect = text.get_rect(center=(self.rect.centerx, bar_y - 8))
+        surface.blit(text, text_rect)
         # Background
         pygame.draw.rect(surface, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
         # Health amount
