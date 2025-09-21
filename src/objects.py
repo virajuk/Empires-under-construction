@@ -9,6 +9,7 @@ from src import settings
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
 from src.villager import Villager
+from src.scout import Scout
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
@@ -27,13 +28,15 @@ class Objects:
 
         self.tree_sprites = pygame.sprite.Group()
         self.villager_sprites = pygame.sprite.Group()
+        self.scout_sprites = pygame.sprite.Group()
 
         self.cell_labels = []  # Store (id, (x, y)) for each tile
         self.selected_cell_idx = None  # Index of currently selected cell
         self.last_cell_change = 0  # Timestamp for cell selection
 
         self.create_map()
-        self.add_villager()
+        # self.add_villager()
+        self.add_scout()
 
     def add_villager(self):
 
@@ -41,6 +44,13 @@ class Objects:
         if self.cell_labels:
             cell_id, (center_x, center_y) = random.choice(self.cell_labels)
             Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
+
+    def add_scout(self):
+
+        # Create a scout at a random tile center
+        if self.cell_labels:
+            cell_id, (center_x, center_y) = random.choice(self.cell_labels)
+            Scout((center_x, center_y), (self.scout_sprites,), start_cell=cell_id)
 
     def reset(self):
         """Respawn players only: remove existing players and spawn two new ones.
@@ -50,12 +60,20 @@ class Objects:
         # Kill existing players
         for p in list(self.villager_sprites):
             p.kill()
+        for p in list(self.scout_sprites):
+            p.kill()
 
-        # Spawn two villagers again at random tiles
-        if self.cell_labels and len(self.cell_labels) > 1:
-            cell_choices = random.sample(self.cell_labels, 2)
-            for cell_id, (center_x, center_y) in cell_choices:
-                Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
+        # Spawn villagers and scouts again at random tiles
+        if self.cell_labels and len(self.cell_labels) > 2:
+            cell_choices = random.sample(self.cell_labels, min(3, len(self.cell_labels)))
+            for i, (cell_id, (center_x, center_y)) in enumerate(cell_choices):
+                if i == 0:
+                    Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
+                elif i == 1:
+                    Scout((center_x, center_y), (self.scout_sprites,), start_cell=cell_id)
+                else:
+                    # Add more villagers if we have more cells
+                    Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
 
     def create_map(self):
         """
@@ -127,24 +145,25 @@ class Objects:
         self.display_surface.blit(score_text, (16, settings.HEIGHT + 8))
         self.display_surface.blit(resources_text, (220, settings.HEIGHT + 8))
 
-        # Show each villager's cell id and score in the panel, styled like score/resources
-        for idx, villager in enumerate(self.villager_sprites):
-            # Find closest cell label to villager center
-            px, py = villager.rect.center
+        # Show each villager's and scout's cell id and score in the panel
+        all_entities = list(self.villager_sprites) + list(self.scout_sprites)
+        for idx, entity in enumerate(all_entities):
+            # Find closest cell label to entity center
+            px, py = entity.rect.center
             closest = min(self.cell_labels, key=lambda c: (c[1][0] - px) ** 2 + (c[1][1] - py) ** 2)
             current_cell = closest[0]
 
-            # Increment villager's score when they enter a new cell (don't count initial spawn)
-            if hasattr(villager, 'last_cell_id'):
-                if villager.last_cell_id is None:
-                    villager.last_cell_id = current_cell
-                elif villager.last_cell_id != current_cell:
-                    villager.score = getattr(villager, 'score', 0) + 1
-                    villager.last_cell_id = current_cell
+            # Increment entity's score when they enter a new cell (don't count initial spawn)
+            if hasattr(entity, 'last_cell_id'):
+                if entity.last_cell_id is None:
+                    entity.last_cell_id = current_cell
+                elif entity.last_cell_id != current_cell:
+                    entity.score = getattr(entity, 'score', 0) + 1
+                    entity.last_cell_id = current_cell
 
             # Show class name (type) in label
-            class_name = type(villager).__name__
-            label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(villager, 'score', 0)}"
+            class_name = type(entity).__name__
+            label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(entity, 'score', 0)}"
             pid_text = font.render(label, True, (0, 255, 255))
             # Place after resources, with spacing
             text_x = 420 + idx * 300
@@ -153,41 +172,42 @@ class Objects:
 
     def avoid_collisions(self):
 
-        # Check for player-player collisions
-        players = list(self.villager_sprites)
-        for i in range(len(players)):
-            for j in range(i + 1, len(players)):
-                if players[i].rect.colliderect(players[j].rect):
+        # Check for player-player collisions (villagers and scouts)
+        all_entities = list(self.villager_sprites) + list(self.scout_sprites)
+        for i in range(len(all_entities)):
+            for j in range(i + 1, len(all_entities)):
+                if all_entities[i].rect.colliderect(all_entities[j].rect):
                     # Set both to reverse next move
-                    if hasattr(players[i], 'reverse_next_move'):
-                        players[i].reverse_next_move = True
-                    if hasattr(players[j], 'reverse_next_move'):
-                        players[j].reverse_next_move = True
+                    if hasattr(all_entities[i], 'reverse_next_move'):
+                        all_entities[i].reverse_next_move = True
+                    if hasattr(all_entities[j], 'reverse_next_move'):
+                        all_entities[j].reverse_next_move = True
 
-        # Check for collisions between villagers and obstacles
-        for villager in self.villager_sprites:
-            collided = pygame.sprite.spritecollideany(villager, self.obstacles_sprites)
+        # Check for collisions between entities and obstacles
+        for entity in all_entities:
+            collided = pygame.sprite.spritecollideany(entity, self.obstacles_sprites)
             if collided:
                 # Revert position to previous rect if available
-                if hasattr(villager, 'prev_rect'):
-                    villager.rect = villager.prev_rect.copy()
-                # Always reverse direction for Villager
-                if hasattr(villager, 'reverse_next_move'):
-                    villager.reverse_next_move = True
+                if hasattr(entity, 'prev_rect'):
+                    entity.rect = entity.prev_rect.copy()
+                # Always reverse direction
+                if hasattr(entity, 'reverse_next_move'):
+                    entity.reverse_next_move = True
 
     def run(self):
 
         # Update player animation and movement
         self.villager_sprites.update()
+        self.scout_sprites.update()
         
         self.avoid_collisions()
 
-        # Replace any dead villagers individually
-        villagers_after = list(self.villager_sprites)
-        for villager in villagers_after:
-            if hasattr(villager, 'health') and villager.health <= 0:
-                # Kill the dead villager sprite
-                villager.kill()
+        # Replace any dead entities individually
+        all_entities = list(self.villager_sprites) + list(self.scout_sprites)
+        for entity in all_entities:
+            if hasattr(entity, 'health') and entity.health <= 0:
+                # Kill the dead entity sprite
+                entity.kill()
         
         # Draw world (grass, sprites) in area 0 to settings.HEIGHT
         world_clip = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
@@ -195,9 +215,15 @@ class Objects:
         self.display_surface.set_clip(world_clip)
         self.visible_sprites.draw(self.display_surface)
 
-        # Draw trees on top of base tiles but beneath villagers
+        # Draw trees on top of base tiles but beneath entities
         self.tree_sprites.draw(self.display_surface)
         self.villager_sprites.draw(self.display_surface)
+        self.scout_sprites.draw(self.display_surface)
+        
+        # Draw health bars above each entity
+        for entity in all_entities:
+            if hasattr(entity, 'draw_health_bar'):
+                entity.draw_health_bar(self.display_surface)
         
         self.display_surface.set_clip(prev_clip)
 
