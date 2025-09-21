@@ -26,7 +26,8 @@ class Objects:
         self.obstacles_sprites = pygame.sprite.Group()
 
         self.tree_sprites = pygame.sprite.Group()
-        self.player_sprites = pygame.sprite.Group()
+        # self.player_sprites = pygame.sprite.Group()
+        self.villager_sprites = pygame.sprite.Group()
 
         self.cell_labels = []  # Store (id, (x, y)) for each tile
         self.selected_cell_idx = None  # Index of currently selected cell
@@ -93,7 +94,6 @@ class Objects:
                     tile_type = world_map[row_idx][col_idx]
 
                 # Place GreenGrass on 'grass' tiles and also beneath trees so trees overlay transparently
-                # if tile_type in ('grass', 'tree') or tile_type is None:
                 GreenGrass((x, y), (self.visible_sprites,), cell)
 
                 # Place trees on 'tree' tiles
@@ -134,10 +134,7 @@ class Objects:
                     if hasattr(players[j], 'reverse_next_move'):
                         players[j].reverse_next_move = True
 
-        # (Previously we reset the whole world when any player died.)
-        # Now we handle death replacement per-player after obstacle collisions below.
-
-        # Prevent players from entering obstacle tiles (trees)
+        # Prevent players from entering obstacles
         for player in list(self.player_sprites):
             # If player collides with any obstacle, revert to previous position and punish
             collided = pygame.sprite.spritecollideany(player, self.obstacles_sprites)
