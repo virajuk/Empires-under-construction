@@ -8,7 +8,6 @@ import numpy as np
 from src import settings
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
-from src.animated_player import AnimatedPlayer
 from src.villager import Villager
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
@@ -20,7 +19,7 @@ class Objects:
         # Game stats (must be set before any method that uses them)
         self.score = 0
         self.resources = 0
-
+        # Restore display surface for drawing
         self.display_surface = pygame.display.get_surface()
 
         self.visible_sprites = pygame.sprite.Group()
@@ -34,9 +33,6 @@ class Objects:
         self.last_cell_change = 0  # Timestamp for cell selection
 
         self.create_map()
-
-        # self.add_2_players()
-
         self.add_villager()
 
     def add_villager(self):
@@ -45,14 +41,6 @@ class Objects:
         if self.cell_labels:
             cell_id, (center_x, center_y) = random.choice(self.cell_labels)
             Villager((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
-
-    def add_2_players(self):
-
-        # Create two animated players at different random tile centers
-        if self.cell_labels and len(self.cell_labels) > 1:
-            cell_choices = random.sample(self.cell_labels, 2)
-            for cell_id, (center_x, center_y) in cell_choices:
-                AnimatedPlayer((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
 
     def reset(self):
         """Respawn players only: remove existing players and spawn two new ones.
@@ -63,11 +51,11 @@ class Objects:
         for p in list(self.player_sprites):
             p.kill()
 
-        # Spawn two players again at random tiles
+        # Spawn two villagers again at random tiles
         if self.cell_labels and len(self.cell_labels) > 1:
             cell_choices = random.sample(self.cell_labels, 2)
             for cell_id, (center_x, center_y) in cell_choices:
-                AnimatedPlayer((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
+                Villager((center_x, center_y), (self.player_sprites,), start_cell=cell_id)
 
     def create_map(self):
         """
@@ -85,7 +73,7 @@ class Objects:
             # Fallback to sizing based on pixel dimensions
             rows = int(settings.HEIGHT / settings.TILE_SIZE)
             cols = int(settings.WIDTH / settings.TILE_SIZE)
-
+        
         self.map_size = [rows, cols]
 
         a = string.ascii_lowercase
@@ -171,10 +159,7 @@ class Objects:
             if hasattr(player, 'health') and player.health <= 0:
                 # Kill the dead player sprite
                 player.kill()
-                # Spawn a replacement at a random cell
-                if self.cell_labels:
-                    cell_id, (cx, cy) = random.choice(self.cell_labels)
-                    AnimatedPlayer((cx, cy), (self.player_sprites,), start_cell=cell_id)
+                
 
         # Draw world (grass, sprites) in area 0 to settings.HEIGHT
         world_clip = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
