@@ -27,11 +27,14 @@ class Scout(pygame.sprite.Sprite):
 
         # Autonomous movement state (AI) - Scouts are faster and more active
         self.ai_mode = True
-        self.speed = 3  # Slightly faster than villagers
+        self.speed = 2
         self.is_moving = False
         self.ai_next_change = 0  # Always triggers direction pick on first update
         self.ai_move_duration = 0
         self.ai_directions = ['up', 'down', 'left', 'right', 'idle']
+        
+        # Track trees discovered by this scout
+        self.discovered_trees = []
 
     def draw_health_bar(self, surface):
         """Draw a health bar above the scout sprite"""
@@ -78,6 +81,7 @@ class Scout(pygame.sprite.Sprite):
 
 
     def update(self):
+        
         now = pygame.time.get_ticks()
 
         # Reverse direction logic (matching Villager)

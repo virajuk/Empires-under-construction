@@ -13,5 +13,5 @@ class Tree(pygame.sprite.Sprite):
         self.images = glob('graphics/tree/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
         self.image = pygame.transform.scale(self.image,(settings.TILE_SIZE, settings.TILE_SIZE))
-        self.rect = self.image.get_rect(topleft=pos)
+        self.rect = self.image.get_rect(center=pos)
         self.id = id

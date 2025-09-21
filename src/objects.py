@@ -10,6 +10,7 @@ from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
 from src.villager import Villager
 from src.scout import Scout
+from src.game_state import GameState
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
@@ -17,9 +18,7 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 class Objects:
 
     def __init__(self):
-        # Game stats (must be set before any method that uses them)
-        self.score = 0
-        self.resources = 0
+        
         # Restore display surface for drawing
         self.display_surface = pygame.display.get_surface()
 
@@ -33,6 +32,9 @@ class Objects:
         self.cell_labels = []  # Store (id, (x, y)) for each tile
         self.selected_cell_idx = None  # Index of currently selected cell
         self.last_cell_change = 0  # Timestamp for cell selection
+        self.discovered_trees = []  # Track tree IDs discovered by scouts
+
+        self.game_state = GameState()
 
         self.create_map()
         # self.add_villager()
@@ -47,10 +49,23 @@ class Objects:
 
     def add_scout(self):
 
-        # Create a scout at a random tile center
-        if self.cell_labels:
-            cell_id, (center_x, center_y) = random.choice(self.cell_labels)
-            Scout((center_x, center_y), (self.scout_sprites,), start_cell=cell_id)
+        # Create a scout to the left of the home tile
+        # Home is at row 5, col 15, so scout goes to row 5, col 14
+        home_row, home_col = 5, 15
+        scout_row, scout_col = 5, 14
+        
+        # Calculate pixel position
+        scout_x = scout_col * settings.TILE_SIZE + settings.TILE_SIZE // 2
+        scout_y = scout_row * settings.TILE_SIZE + settings.TILE_SIZE // 2
+        
+        # Find the corresponding cell ID for this position
+        scout_cell_id = None
+        for cell_id, (center_x, center_y) in self.cell_labels:
+            if abs(center_x - scout_x) < settings.TILE_SIZE // 2 and abs(center_y - scout_y) < settings.TILE_SIZE // 2:
+                scout_cell_id = cell_id
+                break
+        
+        Scout((scout_x, scout_y), (self.scout_sprites,), start_cell=scout_cell_id)
 
     def reset(self):
         """Respawn players only: remove existing players and spawn two new ones.
@@ -76,6 +91,7 @@ class Objects:
                     Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
 
     def create_map(self):
+
         """
         Fills the screen with a grid of GreenGrass tiles and overlays grid cells.
         - Computes grid size from HEIGHT, WIDTH, and TILE_SIZE.
@@ -110,29 +126,30 @@ class Objects:
                 if world_map and row_idx < len(world_map) and col_idx < len(world_map[row_idx]):
                     tile_type = world_map[row_idx][col_idx]
 
+                center_x = x + settings.TILE_SIZE // 2
+                center_y = y + settings.TILE_SIZE // 2
+
                 # Place GreenGrass on 'grass' tiles and also beneath trees so trees overlay transparently
                 GreenGrass((x, y), (self.visible_sprites,), cell)
 
                 # Place trees on 'tree' tiles
                 if tile_type in ('tree'):
-                    Tree((x, y), (self.visible_sprites, self.obstacles_sprites), cell)
-                    
+                    Tree((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
+                
                 # Place home on 'home' tiles
                 if tile_type in ('home'):
-                    Home((x, y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    Home((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
 
                 # Always draw the grid overlay
                 Grid((x, y), (self.visible_sprites,))
 
-                center_x = x + settings.TILE_SIZE // 2
-                center_y = y + settings.TILE_SIZE // 2
                 self.cell_labels.append((cell, (center_x, center_y)))
 
         # Store grid dimensions for cell navigation
         self.grid_rows = rows
         self.grid_cols = cols
 
-    def panel(self):
+    def bottom_panel(self):
 
         # Draw bottom panel in area settings.HEIGHT to settings.SCREEN_HEIGHT
         panel_rect = pygame.Rect(0, settings.HEIGHT, settings.WIDTH, settings.PANEL_HEIGHT)
@@ -140,10 +157,14 @@ class Objects:
         pygame.draw.line(self.display_surface, (100, 100, 100), (0, settings.HEIGHT), (settings.WIDTH, settings.HEIGHT), 2)
 
         font = pygame.font.SysFont(None, 32)
-        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        resources_text = font.render(f"Resources: {self.resources}", True, (255, 255, 255))
+        score_text = font.render(f"Score: {self.game_state.score}", True, (255, 255, 255))
         self.display_surface.blit(score_text, (16, settings.HEIGHT + 8))
-        self.display_surface.blit(resources_text, (220, settings.HEIGHT + 8))
+        
+        # Display discovered trees
+        if self.discovered_trees:
+            trees_text = f"Discovered Trees: {', '.join(self.discovered_trees)}"
+            trees_render = font.render(trees_text, True, (255, 255, 0))  # Yellow color for tree discoveries
+            self.display_surface.blit(trees_render, (220, settings.HEIGHT + 8))
 
         # Show each villager's and scout's cell id and score in the panel
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
@@ -161,14 +182,14 @@ class Objects:
                     entity.score = getattr(entity, 'score', 0) + 1
                     entity.last_cell_id = current_cell
 
-            # Show class name (type) in label
-            class_name = type(entity).__name__
-            label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(entity, 'score', 0)}"
-            pid_text = font.render(label, True, (0, 255, 255))
-            # Place after resources, with spacing
-            text_x = 420 + idx * 300
-            text_y = settings.HEIGHT + 8
-            self.display_surface.blit(pid_text, (text_x, text_y))
+            # # Show class name (type) in label
+            # class_name = type(entity).__name__
+            # label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(entity, 'score', 0)}"
+            # pid_text = font.render(label, True, (0, 255, 255))
+            # # Place after resources, with spacing
+            # text_x = 420 + idx * 300
+            # text_y = settings.HEIGHT + 8
+            # self.display_surface.blit(pid_text, (text_x, text_y))
 
     def avoid_collisions(self):
 
@@ -187,6 +208,17 @@ class Objects:
         for entity in all_entities:
             collided = pygame.sprite.spritecollideany(entity, self.obstacles_sprites)
             if collided:
+                # If it's a scout colliding with a tree, record the tree discovery
+                if type(entity).__name__ == 'Scout' and type(collided).__name__ == 'Tree':
+                    tree_id = getattr(collided, 'id', 'unknown')
+                    # Add to global discovered trees list if not already there
+                    if tree_id not in self.discovered_trees:
+                        self.discovered_trees.append(tree_id)
+                        self.game_state.update_score(10)  # Add 10 points for new tree discovery
+                    # Add to scout's personal discovered trees list if not already there
+                    if hasattr(entity, 'discovered_trees') and tree_id not in entity.discovered_trees:
+                        entity.discovered_trees.append(tree_id)
+                
                 # Revert position to previous rect if available
                 if hasattr(entity, 'prev_rect'):
                     entity.rect = entity.prev_rect.copy()
@@ -220,11 +252,6 @@ class Objects:
         self.villager_sprites.draw(self.display_surface)
         self.scout_sprites.draw(self.display_surface)
         
-        # Draw health bars above each entity
-        for entity in all_entities:
-            if hasattr(entity, 'draw_health_bar'):
-                entity.draw_health_bar(self.display_surface)
-        
         self.display_surface.set_clip(prev_clip)
 
-        self.panel()        
+        self.bottom_panel()
