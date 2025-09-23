@@ -1,8 +1,9 @@
 # deprecated to keep older scripts who import this from breaking
 from src.objects import Objects
-from src import settings
 from src.villager import Villager
+from src.scout import Scout
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
+from src.game_state import game_state
 
-__all__ = ['Objects', 'settings', 'Villager', 'AnimatedPlayer', 'GreenGrass', 'Tree', 'Sand', 'Water', 'Grid', 'Home']
+__all__ = ['Objects', 'Villager', 'Scout', 'AnimatedPlayer', 'GreenGrass', 'Tree', 'Sand', 'Water', 'Grid', 'Home', 'game_state']

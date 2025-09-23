@@ -3,7 +3,12 @@ import random
 from glob import glob
 import pygame
 
-from src import settings
+from src.config import get as get_config
+from src.map_loader import load_map
+
+# Always use TILE_SIZE from the selected map
+_map_name = get_config('SELECTED_MAP', 'map_1')
+_, _, TILE_SIZE, _ = load_map(_map_name)
 
 class GreenGrass(pygame.sprite.Sprite):
 
@@ -12,7 +17,7 @@ class GreenGrass(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/grass/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
-        self.image = pygame.transform.scale(self.image,(settings.TILE_SIZE, settings.TILE_SIZE))
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
         self.rect = self.image.get_rect(topleft=pos)
         self.id = id
 
@@ -34,27 +39,27 @@ class Water(pygame.sprite.Sprite):
         super().__init__(groups)
         self.images = glob('graphics/water/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
         self.rect = self.image.get_rect(topleft=pos)
         self.id = id
 
 
 class Grid(pygame.sprite.Sprite):
 
-    def __init__(self, pos, groups):
-
+    def __init__(self, pos, groups, id, alpha=200):
         super().__init__(groups)
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
-        self.image.set_alpha(20)
-        self.rect = self.image.get_rect(topleft=pos)
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
+        self.image.set_alpha(alpha)
+        self.rect = self.image.get_rect(center=pos)
+        self.id = id
 
 class Home(pygame.sprite.Sprite):
 
     def __init__(self, pos, groups, id):
-
+        
         super().__init__(groups)
         self.image = pygame.image.load('graphics/grid/home.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
-        self.rect = self.image.get_rect(topleft=pos)
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
+        self.rect = self.image.get_rect(center=pos)
         self.id = id

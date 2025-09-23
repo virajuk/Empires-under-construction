@@ -1,6 +1,11 @@
 import pygame
 import random
-from src import settings
+from src.config import get as get_config
+from src.map_loader import load_map
+
+# Always use map values from the selected map
+_map_name = get_config('SELECTED_MAP', 'map_1')
+WIDTH, HEIGHT, TILE_SIZE, _ = load_map(_map_name)
 
 
 class Villager(pygame.sprite.Sprite):
@@ -12,13 +17,14 @@ class Villager(pygame.sprite.Sprite):
         self.frame_index = 0
         self.animation_speed = 0.15
         self.current_direction = 'down'  # Default facing direction
+        
         self.load_walk_frames()
-        self.image = self.frames[self.current_direction][0]
-        self.rect = self.image.get_rect(center=pos)
-        self.direction = pygame.math.Vector2()
-        # For collision reversion (if needed)
-        self.prev_rect = self.rect.copy()
-
+        self.load_axe_frames()
+        self.using_axe = False
+        self.chopping = False
+        self.load_chopping_frames()
+        
+        
         # Health (match AnimatedPlayer)
         self.health = 100  # Max 100
 
@@ -33,8 +39,74 @@ class Villager(pygame.sprite.Sprite):
         self.ai_move_duration = 0
         self.ai_directions = ['up', 'down', 'left', 'right', 'idle']
 
+        self.direction = pygame.math.Vector2()
+        self.last_move_direction = self.current_direction
+        
+        # Ensure self.image is set after frames are loaded and current_direction is set
+        self.image = self.frames[self.current_direction][0]
+        self.rect = self.image.get_rect(center=pos)
+
+        # For collision reversion (if needed)
+        self.prev_rect = self.rect.copy()
+    
+    def load_chopping_frames(self):
+        """Load chopping animation frames from graphics/villager/chopping_wood.png organized by direction (4x6 grid)"""
+        try:
+            sprite_sheet = pygame.image.load('graphics/villager/chopping_wood.png').convert_alpha()
+            sheet_width, sheet_height = sprite_sheet.get_size()
+            rows, cols = 4, 6
+            frame_width = sheet_width // cols
+            frame_height = sheet_height // rows
+            directions = ['up', 'left', 'down', 'right']
+            self.chop_frames = {d: [] for d in directions}
+            for i, direction in enumerate(directions):
+                for c in range(cols):
+
+                    # Crop a 64x64 region centered in the 128x128 frame
+                    cx = c * frame_width + frame_width // 2
+                    cy = i * frame_height + frame_height // 2
+                    crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
+                    frame = sprite_sheet.subsurface(crop_rect).copy()
+
+                    # No need to scale, already 64x64
+                    if frame.get_flags() & pygame.SRCALPHA:
+                        frame = frame.convert_alpha()
+                    else:
+                        bg = frame.get_at((0, 0))[:3]
+                        frame.set_colorkey(bg)
+                    self.chop_frames[direction].append(frame)
+        except Exception:
+            self.chop_frames = {d: [] for d in ['up', 'left', 'down', 'right']}
+
+    def load_axe_frames(self):
+
+        """Load axe-walking animation frames from graphics/villager/walk_with_axe.png organized by direction (4x9 grid)"""
+        try:
+            sprite_sheet = pygame.image.load('graphics/villager/walk_with_axe.png').convert_alpha()
+            sheet_width, sheet_height = sprite_sheet.get_size()
+            rows, cols = 4, 9
+            frame_width = sheet_width // cols
+            frame_height = sheet_height // rows
+            directions = ['up', 'left', 'down', 'right']
+            self.axe_frames = {d: [] for d in directions}
+            for i, direction in enumerate(directions):
+                for c in range(cols):
+                    rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
+                    frame = sprite_sheet.subsurface(rect).copy()
+                    frame = pygame.transform.scale(frame, (TILE_SIZE, TILE_SIZE))
+                    if frame.get_flags() & pygame.SRCALPHA:
+                        frame = frame.convert_alpha()
+                    else:
+                        bg = frame.get_at((0, 0))[:3]
+                        frame.set_colorkey(bg)
+                    self.axe_frames[direction].append(frame)
+        except Exception:
+            self.axe_frames = {d: [] for d in ['up', 'left', 'down', 'right']}
+            
+
     def draw_health_bar(self, surface):
-        bar_width = settings.TILE_SIZE
+        """Draw a health bar above the villager sprite"""
+        bar_width = TILE_SIZE
         bar_height = 8
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top
@@ -67,7 +139,7 @@ class Villager(pygame.sprite.Sprite):
             for c in range(cols):
                 rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
                 frame = sprite_sheet.subsurface(rect).copy()
-                frame = pygame.transform.scale(frame, (settings.TILE_SIZE, settings.TILE_SIZE))
+                frame = pygame.transform.scale(frame, (TILE_SIZE, TILE_SIZE))
                 if frame.get_flags() & pygame.SRCALPHA:
                     frame = frame.convert_alpha()
                 else:
@@ -75,11 +147,50 @@ class Villager(pygame.sprite.Sprite):
                     frame.set_colorkey(bg)
                 self.frames[direction].append(frame)
 
+    def chopping_woods_animation(self):
+
+        # Animate using chopping frames in last movement direction
+        direction = self.last_move_direction
+        current_frames = self.chop_frames[direction]
+        self.frame_index += self.animation_speed
+        if self.frame_index >= len(current_frames):
+            self.frame_index = 0
+        if current_frames:
+            self.image = current_frames[int(self.frame_index)]
+
+    def walk_with_axe_animation(self):
+
+        # Animate using axe frames
+        current_frames = self.axe_frames[self.current_direction]
+        if self.is_moving and current_frames:
+            self.frame_index += self.animation_speed
+            if self.frame_index >= len(current_frames):
+                self.frame_index = 0
+            self.image = current_frames[int(self.frame_index)]
+        elif current_frames:
+            self.image = current_frames[0]
 
     def update(self):
+        
         now = pygame.time.get_ticks()
 
-        # Reverse direction logic (matching AnimatedPlayer)
+        # Toggle axe animation with 'c' key, chopping with 'p' key
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_c]:
+            if not hasattr(self, '_axe_toggle_last') or not self._axe_toggle_last:
+                self.using_axe = not self.using_axe
+            self._axe_toggle_last = True
+        else:
+            self._axe_toggle_last = False
+
+        if keys[pygame.K_p]:
+            if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
+                self.chopping = not self.chopping
+            self._chop_toggle_last = True
+        else:
+            self._chop_toggle_last = False
+
+        # Reverse direction logic
         if hasattr(self, 'reverse_next_move') and self.reverse_next_move:
             if self.direction.x == 1:
                 self.direction.x = -1
@@ -133,19 +244,29 @@ class Villager(pygame.sprite.Sprite):
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
 
-        # Check for collision with outer bounds (match AnimatedPlayer)
-        if self.rect.left < 0 or self.rect.right > settings.WIDTH or self.rect.top < 0 or self.rect.bottom > settings.HEIGHT:
-            self.health = max(0, self.health - 5)
-            self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
+        # Check for collision with outer bounds (no health reduction)
+        if self.rect.left < 0 or self.rect.right > WIDTH or self.rect.top < 0 or self.rect.bottom > HEIGHT:
+            self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
             self.reverse_next_move = True
 
-        # Animate only when moving
-        current_frames = self.frames[self.current_direction]
-        if self.is_moving and current_frames:
-            self.frame_index += self.animation_speed
-            if self.frame_index >= len(current_frames):
-                self.frame_index = 0
-            self.image = current_frames[int(self.frame_index)]
-        elif current_frames:
-            self.image = current_frames[0]
+        # Animate: use chopping animation if enabled, else axe, else normal
+        if self.chopping:
+            # Stop movement and play chopping animation in last movement direction
+            self.direction.x = 0
+            self.direction.y = 0
+            self.current_direction = self.last_move_direction
+            self.chopping_woods_animation()
+        elif self.using_axe:
+            self.walk_with_axe_animation()
+        else:
+            current_frames = self.frames[self.current_direction]
+            if self.is_moving and current_frames:
+                self.frame_index += self.animation_speed
+                if self.frame_index >= len(current_frames):
+                    self.frame_index = 0
+                self.image = current_frames[int(self.frame_index)]
+                # Update last movement direction when moving
+                self.last_move_direction = self.current_direction
+            elif current_frames:
+                self.image = current_frames[0]
 
