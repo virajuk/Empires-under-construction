@@ -56,11 +56,13 @@ class Villager(pygame.sprite.Sprite):
             self.chop_frames = {d: [] for d in directions}
             for i, direction in enumerate(directions):
                 for c in range(cols):
+
                     # Crop a 64x64 region centered in the 128x128 frame
                     cx = c * frame_width + frame_width // 2
                     cy = i * frame_height + frame_height // 2
                     crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
                     frame = sprite_sheet.subsurface(crop_rect).copy()
+
                     # No need to scale, already 64x64
                     if frame.get_flags() & pygame.SRCALPHA:
                         frame = frame.convert_alpha()
@@ -141,6 +143,7 @@ class Villager(pygame.sprite.Sprite):
                 self.frames[direction].append(frame)
 
     def chopping_woods_animation(self):
+
         # Animate using chopping frames in last movement direction
         direction = self.last_move_direction
         current_frames = self.chop_frames[direction]
@@ -163,6 +166,7 @@ class Villager(pygame.sprite.Sprite):
             self.image = current_frames[0]
 
     def update(self):
+        
         now = pygame.time.get_ticks()
 
         # Toggle axe animation with 'c' key, chopping with 'p' key

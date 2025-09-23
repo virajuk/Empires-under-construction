@@ -27,7 +27,7 @@ class Scout(pygame.sprite.Sprite):
 
         # Autonomous movement state (AI) - Scouts are faster and more active
         self.ai_mode = True
-        self.speed = 2
+        self.speed = 3  # Slightly faster than villagers
         self.is_moving = False
         self.ai_next_change = 0  # Always triggers direction pick on first update
         self.ai_move_duration = 0
@@ -37,6 +37,7 @@ class Scout(pygame.sprite.Sprite):
         self.discovered_trees = []
 
     def draw_health_bar(self, surface):
+        
         """Draw a health bar above the scout sprite"""
         bar_width = settings.TILE_SIZE
         bar_height = 8
@@ -140,7 +141,7 @@ class Scout(pygame.sprite.Sprite):
 
         # Check for collision with outer bounds (match Villager)
         if self.rect.left < 0 or self.rect.right > settings.WIDTH or self.rect.top < 0 or self.rect.bottom > settings.HEIGHT:
-            self.health = max(0, self.health - 5)
+            # self.health = max(0, self.health - 5)
             self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
             self.reverse_next_move = True
 
