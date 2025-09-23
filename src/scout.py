@@ -1,11 +1,6 @@
 import pygame
 import random
-from src.config import get as get_config
-from src.map_loader import load_map
-
-# Always use map values from the selected map
-_map_name = get_config('SELECTED_MAP', 'map_1')
-WIDTH, HEIGHT, TILE_SIZE, _ = load_map(_map_name)
+from src.game_state import game_state
 
 class Scout(pygame.sprite.Sprite):
     
@@ -43,7 +38,7 @@ class Scout(pygame.sprite.Sprite):
     def draw_health_bar(self, surface):
         
         """Draw a health bar above the scout sprite"""
-        bar_width = TILE_SIZE * 0.7
+        bar_width = game_state.TILE_SIZE * 0.7
         bar_height = 8
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top
@@ -71,7 +66,7 @@ class Scout(pygame.sprite.Sprite):
             for c in range(cols):
                 rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
                 frame = sprite_sheet.subsurface(rect).copy()
-                frame = pygame.transform.scale(frame, (TILE_SIZE, TILE_SIZE))
+                frame = pygame.transform.scale(frame, (game_state.TILE_SIZE, game_state.TILE_SIZE))
                 if frame.get_flags() & pygame.SRCALPHA:
                     frame = frame.convert_alpha()
                 else:
@@ -139,9 +134,9 @@ class Scout(pygame.sprite.Sprite):
         self.rect.y += self.direction.y * self.speed
 
         # Check for collision with outer bounds (match Villager)
-        if self.rect.left < 0 or self.rect.right > WIDTH or self.rect.top < 0 or self.rect.bottom > HEIGHT:
+        if self.rect.left < 0 or self.rect.right > game_state.WIDTH or self.rect.top < 0 or self.rect.bottom > game_state.HEIGHT:
             # self.health = max(0, self.health - 5)
-            self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
+            self.rect.clamp_ip(pygame.Rect(0, 0, game_state.WIDTH, game_state.HEIGHT))
             self.reverse_next_move = True
 
         # Animate only when moving

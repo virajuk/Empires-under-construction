@@ -15,19 +15,20 @@ class Game:
         - Instantiates the Objects world, which manages all sprites and world generation.
         """
 
-        # Load selected map from config
+        # Load selected map from config and store in game_state
         map_name = get_config('SELECTED_MAP', 'map_1')
         WIDTH, HEIGHT, TILE_SIZE, WORLD_MAP = load_map(map_name)
-        self.WIDTH = WIDTH
-        self.HEIGHT = HEIGHT
-        self.TILE_SIZE = TILE_SIZE
-        self.WORLD_MAP = WORLD_MAP
+        game_state.WIDTH = WIDTH
+        game_state.HEIGHT = HEIGHT
+        game_state.TILE_SIZE = TILE_SIZE
+        game_state.WORLD_MAP = WORLD_MAP
+        game_state.MAP_NAME = map_name
 
         pygame.init()
         panel_height = get_config('PANEL_HEIGHT', 48)
-        screen_height = get_config('SCREEN_HEIGHT', HEIGHT + panel_height)
-        self.screen = pygame.display.set_mode((WIDTH, screen_height))
-        pygame.display.set_caption(f"EMPIRES - {map_name}")
+        screen_height = get_config('SCREEN_HEIGHT', game_state.HEIGHT + panel_height)
+        self.screen = pygame.display.set_mode((game_state.WIDTH, screen_height))
+        pygame.display.set_caption(f"EMPIRES - {game_state.MAP_NAME}")
         self.clock = pygame.time.Clock()
         self.objects = Objects()
 

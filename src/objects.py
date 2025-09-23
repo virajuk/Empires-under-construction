@@ -22,6 +22,7 @@ from src.map_loader import load_map
 
 class Objects:
     def __init__(self):
+
         # Load map details directly
         map_name = get_config('SELECTED_MAP', 'map_1')
         self.width, self.height, self.tile_size, self.world_map = load_map(map_name)
@@ -38,6 +39,7 @@ class Objects:
         self.grid_sprites = {}
         self.create_map()
         self.add_scout()
+        self.add_villager()
 
     def add_villager(self):
 
@@ -75,6 +77,7 @@ class Objects:
                 Scout((center_x, center_y), (self.scout_sprites,), start_cell=cell_id)
 
     def reset(self):
+
         """Respawn players only: remove existing players and spawn two new ones.
 
         Keep map, trees, and stats intact.
