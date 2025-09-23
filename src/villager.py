@@ -1,6 +1,11 @@
 import pygame
 import random
-from src import settings
+from src.config import get as get_config
+from src.map_loader import load_map
+
+# Always use map values from the selected map
+_map_name = get_config('SELECTED_MAP', 'map_1')
+WIDTH, HEIGHT, TILE_SIZE, _ = load_map(_map_name)
 
 
 class Villager(pygame.sprite.Sprite):
@@ -88,7 +93,7 @@ class Villager(pygame.sprite.Sprite):
                 for c in range(cols):
                     rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
                     frame = sprite_sheet.subsurface(rect).copy()
-                    frame = pygame.transform.scale(frame, (settings.TILE_SIZE, settings.TILE_SIZE))
+                    frame = pygame.transform.scale(frame, (TILE_SIZE, TILE_SIZE))
                     if frame.get_flags() & pygame.SRCALPHA:
                         frame = frame.convert_alpha()
                     else:
@@ -101,7 +106,7 @@ class Villager(pygame.sprite.Sprite):
 
     def draw_health_bar(self, surface):
         """Draw a health bar above the villager sprite"""
-        bar_width = settings.TILE_SIZE
+        bar_width = TILE_SIZE
         bar_height = 8
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top
@@ -134,7 +139,7 @@ class Villager(pygame.sprite.Sprite):
             for c in range(cols):
                 rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
                 frame = sprite_sheet.subsurface(rect).copy()
-                frame = pygame.transform.scale(frame, (settings.TILE_SIZE, settings.TILE_SIZE))
+                frame = pygame.transform.scale(frame, (TILE_SIZE, TILE_SIZE))
                 if frame.get_flags() & pygame.SRCALPHA:
                     frame = frame.convert_alpha()
                 else:
@@ -240,8 +245,8 @@ class Villager(pygame.sprite.Sprite):
         self.rect.y += self.direction.y * self.speed
 
         # Check for collision with outer bounds (no health reduction)
-        if self.rect.left < 0 or self.rect.right > settings.WIDTH or self.rect.top < 0 or self.rect.bottom > settings.HEIGHT:
-            self.rect.clamp_ip(pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT))
+        if self.rect.left < 0 or self.rect.right > WIDTH or self.rect.top < 0 or self.rect.bottom > HEIGHT:
+            self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
             self.reverse_next_move = True
 
         # Animate: use chopping animation if enabled, else axe, else normal

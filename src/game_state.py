@@ -1,4 +1,3 @@
-from src import settings
 
 class GameState:
 
@@ -33,3 +32,5 @@ class GameState:
         self.wood = 0
         self.gold = 0
         self.food = 0
+
+game_state = GameState()

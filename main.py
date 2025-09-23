@@ -1,13 +1,11 @@
 import pygame
 import sys
-
 from src import Objects
-from src import settings
-
-###
+from src.config import get as get_config
+from src import game_state
+from src.map_loader import load_map
 
 class Game:
-
     def __init__(self):
         """
         Initializes the Game environment:
@@ -17,9 +15,19 @@ class Game:
         - Instantiates the Objects world, which manages all sprites and world generation.
         """
 
+        # Load selected map from config
+        map_name = get_config('SELECTED_MAP', 'map_1')
+        WIDTH, HEIGHT, TILE_SIZE, WORLD_MAP = load_map(map_name)
+        self.WIDTH = WIDTH
+        self.HEIGHT = HEIGHT
+        self.TILE_SIZE = TILE_SIZE
+        self.WORLD_MAP = WORLD_MAP
+
         pygame.init()
-        self.screen = pygame.display.set_mode((settings.WIDTH, settings.SCREEN_HEIGHT))
-        pygame.display.set_caption("EMPIRES")
+        panel_height = get_config('PANEL_HEIGHT', 48)
+        screen_height = get_config('SCREEN_HEIGHT', HEIGHT + panel_height)
+        self.screen = pygame.display.set_mode((WIDTH, screen_height))
+        pygame.display.set_caption(f"EMPIRES - {map_name}")
         self.clock = pygame.time.Clock()
         self.objects = Objects()
 
@@ -33,24 +41,18 @@ class Game:
         """
 
         while True:
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
             keys = pygame.key.get_pressed()
             if keys[pygame.K_ESCAPE]:
                 pygame.quit()
                 sys.exit()
-
             self.objects.run()
-
             pygame.display.update()
-            self.clock.tick(60)
-
+            self.clock.tick(get_config('FPS', 60))
 
 if __name__ == '__main__':
-
     game = Game()
     game.run()
