@@ -30,11 +30,14 @@ class Water(pygame.sprite.Sprite):
         self.id = id
 
 class Grid(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, id, alpha=200):
+    def __init__(self, pos, groups, id):
+        from src.config import get as get_config
         super().__init__(groups)
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (game_state.TILE_SIZE, game_state.TILE_SIZE))
-        self.image.set_alpha(alpha)
+        fog_enabled = get_config('FOG_OF_WAR', True)
+        alpha_val = 200 if fog_enabled else 20
+        self.image.set_alpha(alpha_val)
         self.rect = self.image.get_rect(center=pos)
         self.id = id
 

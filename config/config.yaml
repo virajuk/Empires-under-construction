@@ -3,5 +3,5 @@ SHOW_HEALTH: true
 FPS: 60
 PANEL_HEIGHT: 48
 SCREEN_HEIGHT: 752  # HEIGHT + PANEL_HEIGHT (704 + 48)
-SELECTED_MAP: map_2
-# Add other config values as needed
+SELECTED_MAP: map_3
+FOG_OF_WAR: false  # Toggle fog of war on/off

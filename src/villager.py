@@ -165,18 +165,21 @@ class Villager(pygame.sprite.Sprite):
     def update(self):
         now = pygame.time.get_ticks()
         keys = pygame.key.get_pressed()
+
         if keys[pygame.K_c]:
             if not hasattr(self, '_axe_toggle_last') or not self._axe_toggle_last:
                 self.using_axe = not self.using_axe
             self._axe_toggle_last = True
         else:
             self._axe_toggle_last = False
+        
         if keys[pygame.K_p]:
             if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
                 self.chopping = not self.chopping
             self._chop_toggle_last = True
         else:
             self._chop_toggle_last = False
+        
         if hasattr(self, 'reverse_next_move') and self.reverse_next_move:
             if self.direction.x == 1:
                 self.direction.x = -1
@@ -192,6 +195,7 @@ class Villager(pygame.sprite.Sprite):
                 self.current_direction = 'down'
             self.reverse_next_move = False
         self.prev_rect = self.rect.copy()
+        
         if self.ai_mode:
             if now > self.ai_next_change:
                 direction = random.choices(
