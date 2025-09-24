@@ -6,7 +6,7 @@ def create_tree_patch(center, size):
 
     print(center, size, game_state.TILE_SIZE)
 
-def bottom_panel(display_surface, discovered_trees):
+def bottom_panel(display_surface):
         
         # Draw bottom panel in area settings.HEIGHT to config SCREEN_HEIGHT
         panel_height = get_config('PANEL_HEIGHT', 48)
@@ -19,12 +19,6 @@ def bottom_panel(display_surface, discovered_trees):
         score_text = font.render(f"Score: {game_state.score}", True, (255, 255, 255))
         display_surface.blit(score_text, (16, game_state.HEIGHT + 8))
         
-        # Display discovered trees
-        if discovered_trees:
-            trees_text = f"Discovered Trees: {', '.join(discovered_trees)}"
-            trees_render = font.render(trees_text, True, (255, 255, 0))  # Yellow color for tree discoveries
-            display_surface.blit(trees_render, (220, game_state.HEIGHT + 8))
-
         # # Show each villager's and scout's cell id and score in the panel
         # all_entities = list(self.villager_sprites) + list(self.scout_sprites)
         # for idx, entity in enumerate(all_entities):

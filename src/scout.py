@@ -3,7 +3,7 @@ import random
 from src.game_state import game_state
 
 class Scout(pygame.sprite.Sprite):
-    
+
     def __init__(self, pos, groups, start_cell=None):
 
         super().__init__(groups)
@@ -34,6 +34,39 @@ class Scout(pygame.sprite.Sprite):
         
         # Track trees discovered by this scout
         self.discovered_trees = []
+
+    @staticmethod
+    def spawn_position(cell_labels):
+
+        # Spawn left of home tile, fallback to random
+        world_map = game_state.WORLD_MAP
+        tile_size = game_state.TILE_SIZE
+        home_row, home_col = None, None
+        home_row, home_col = None, None
+        if world_map:
+            for r, row in enumerate(world_map):
+                for c, val in enumerate(row):
+                    if val == 'home':
+                        home_row, home_col = r, c
+                        break
+                if home_row is not None:
+                    break
+        if home_row is not None and home_col is not None and home_col > 0:
+            scout_row, scout_col = home_row, home_col - 1
+            scout_x = scout_col * tile_size + tile_size // 2
+            scout_y = scout_row * tile_size + tile_size // 2
+            scout_cell_id = None
+            for cell_id, (center_x, center_y) in cell_labels:
+                if abs(center_x - scout_x) < tile_size // 2 and abs(center_y - scout_y) < tile_size // 2:
+                    scout_cell_id = cell_id
+                    break
+            return (scout_x, scout_y), scout_cell_id
+        else:
+            # Fallback: spawn at random if home not found
+            if cell_labels:
+                cell_id, (center_x, center_y) = random.choice(cell_labels)
+                return (center_x, center_y), cell_id
+            return None, None
 
     def draw_health_bar(self, surface):
         

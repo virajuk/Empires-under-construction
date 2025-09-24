@@ -89,6 +89,7 @@ class Villager(pygame.sprite.Sprite):
         pygame.draw.rect(surface, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 1)
     
     def load_walk_frames(self):
+
         sprite_sheet = pygame.image.load('graphics/villager/walk.png').convert_alpha()
         sheet_width, sheet_height = sprite_sheet.get_size()
         rows, cols = 4, 9
@@ -128,6 +129,39 @@ class Villager(pygame.sprite.Sprite):
         elif current_frames:
             self.image = current_frames[0]
     
+    @staticmethod
+    def spawn_position(cell_labels):
+
+        # Spawn left of home tile, fallback to random
+        world_map = game_state.WORLD_MAP
+        tile_size = game_state.TILE_SIZE
+        home_row, home_col = None, None
+        if world_map:
+            for r, row in enumerate(world_map):
+                for c, val in enumerate(row):
+                    if val == 'home':
+                        home_row, home_col = r, c
+                        break
+                if home_row is not None:
+                    break
+        if home_row is not None and home_col is not None and home_col > 0:
+            villager_row, villager_col = home_row, home_col - 1
+            villager_x = villager_col * tile_size + tile_size // 2
+            villager_y = villager_row * tile_size + tile_size // 2
+            villager_cell_id = None
+            for cell_id, (center_x, center_y) in cell_labels:
+                if abs(center_x - villager_x) < tile_size // 2 and abs(center_y - villager_y) < tile_size // 2:
+                    villager_cell_id = cell_id
+                    break
+            return (villager_x, villager_y), villager_cell_id
+        else:
+            # Fallback: spawn at random if home not found
+            if cell_labels:
+                cell_id, (center_x, center_y) = random.choice(cell_labels)
+                return (center_x, center_y), cell_id
+            return None, None
+
+
     def update(self):
         now = pygame.time.get_ticks()
         keys = pygame.key.get_pressed()

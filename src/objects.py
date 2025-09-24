@@ -38,43 +38,22 @@ class Objects:
         self.discovered_trees = []
         self.grid_sprites = {}
         self.create_map()
-        self.add_scout()
+        # self.add_scout()
         self.add_villager()
 
     def add_villager(self):
 
-        # Create a villager at a random tile center
-        if self.cell_labels:
-            cell_id, (center_x, center_y) = random.choice(self.cell_labels)
-            Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
-
+        # Use Villager.spawn_position to determine spawn location
+        pos, cell_id = Villager.spawn_position(self.cell_labels)
+        if pos and cell_id:
+            Villager(pos, (self.villager_sprites,), start_cell=cell_id)
+    
     def add_scout(self):
 
-        # Dynamically find the home tile location from self.world_map
-        world_map = self.world_map
-        home_row, home_col = None, None
-        if world_map:
-            for r, row in enumerate(world_map):
-                for c, val in enumerate(row):
-                    if val == 'home':
-                        home_row, home_col = r, c
-                        break
-                if home_row is not None:
-                    break
-        if home_row is not None and home_col is not None and home_col > 0:
-            scout_row, scout_col = home_row, home_col - 1
-            scout_x = scout_col * self.tile_size + self.tile_size // 2
-            scout_y = scout_row * self.tile_size + self.tile_size // 2
-            scout_cell_id = None
-            for cell_id, (center_x, center_y) in self.cell_labels:
-                if abs(center_x - scout_x) < self.tile_size // 2 and abs(center_y - scout_y) < self.tile_size // 2:
-                    scout_cell_id = cell_id
-                    break
-            Scout((scout_x, scout_y), (self.scout_sprites,), start_cell=scout_cell_id)
-        else:
-            if self.cell_labels:
-                cell_id, (center_x, center_y) = random.choice(self.cell_labels)
-                Scout((center_x, center_y), (self.scout_sprites,), start_cell=cell_id)
+        # Use Scout.spawn_position to determine spawn location
+        pos, cell_id = Scout.spawn_position(self.cell_labels)
+        if pos and cell_id:
+            Scout(pos, (self.scout_sprites,), start_cell=cell_id)
 
     def reset(self):
 
@@ -135,9 +114,9 @@ class Objects:
         self.grid_rows = rows
         self.grid_cols = cols
 
-    def avoid_collisions(self):
+    def avoid_unit_collisions(self):
 
-        # Check for player-player collisions (villagers and scouts)
+        # Check for unit collisions
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
         for i in range(len(all_entities)):
             for j in range(i + 1, len(all_entities)):
@@ -148,31 +127,29 @@ class Objects:
                     if hasattr(all_entities[j], 'reverse_next_move'):
                         all_entities[j].reverse_next_move = True
 
+    def avoid_collisions(self):
+
+        all_entities = list(self.villager_sprites) + list(self.scout_sprites)
+
         # Check for collisions between entities and obstacles
         for entity in all_entities:
+
             collided = pygame.sprite.spritecollideany(entity, self.obstacles_sprites)
             if collided:
-                # If it's a scout colliding with a tree, record the tree discovery
-                if type(entity).__name__ == 'Scout' and type(collided).__name__ == 'Tree':
-                    tree_id = getattr(collided, 'id', 'unknown')
-                    # Add to global discovered trees list if not already there
-                    if tree_id not in self.discovered_trees:
-                        self.discovered_trees.append(tree_id)
-                        game_state.update_score(10)  # Add 10 points for new tree discovery
-                    # Add to scout's personal discovered trees list if not already there
-                    if hasattr(entity, 'discovered_trees') and tree_id not in entity.discovered_trees:
-                        entity.discovered_trees.append(tree_id)
-                # Reveal fog for obstacle tile when scout collides
-                if type(entity).__name__ == 'Scout':
-                    self.reveal_cell(collided.rect.centerx, collided.rect.centery)
+
+                # Reveal fog for obstacle tile when unit collides
+                self.reveal_cell(collided.rect.centerx, collided.rect.centery)
+                
                 # Revert position to previous rect if available
                 if hasattr(entity, 'prev_rect'):
                     entity.rect = entity.prev_rect.copy()
+                
                 # Always reverse direction
                 if hasattr(entity, 'reverse_next_move'):
                     entity.reverse_next_move = True
 
     def reveal_cell(self, x, y):
+
         col = x // self.tile_size
         row = y // self.tile_size
         grid_sprite = self.grid_sprites.get((row, col))
@@ -188,27 +165,40 @@ class Objects:
                     entity.draw_health_bar(self.display_surface)
 
     def run(self):
+
         # Update animation and movement
         self.villager_sprites.update()
         self.scout_sprites.update()
+
         # Reveal fog for scouts
         for scout in self.scout_sprites:
             self.reveal_cell(scout.rect.centerx, scout.rect.centery)
+
+        # Reveal fog for villagers
+        for villager in self.villager_sprites:
+            self.reveal_cell(villager.rect.centerx, villager.rect.centery)
+
+        self.avoid_unit_collisions()
         self.avoid_collisions()
+
         # Replace any dead entities individually
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
         for entity in all_entities:
             if hasattr(entity, 'health') and entity.health <= 0:
                 entity.kill()
+
         # Draw world (grass, sprites) in area 0 to self.height
         world_clip = pygame.Rect(0, 0, self.width, self.height)
         prev_clip = self.display_surface.get_clip()
         self.display_surface.set_clip(world_clip)
         self.visible_sprites.draw(self.display_surface)
+
         # Draw trees on top of base tiles but beneath entities
         self.tree_sprites.draw(self.display_surface)
         self.villager_sprites.draw(self.display_surface)
         self.scout_sprites.draw(self.display_surface)
+
         self.display_surface.set_clip(prev_clip)
         self.draw_health_bars()
-        bottom_panel(self.display_surface, self.discovered_trees)
+
+        bottom_panel(self.display_surface)
