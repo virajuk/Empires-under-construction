@@ -56,7 +56,10 @@ class Game:
             pygame.display.update()
             self.clock.tick(get_config('FPS', 60))
 
-            # trees = list(game_state.tree_sprites)
+            # trees = list(game_state.board.tree_sprites)
+            # print(f"Trees: {len(trees)}")
+
+
             # for tree in trees:
             #     print(f"Tree: {tree.id} Wood: {tree.wood}")
             #     x, y = utils.get_tree_center_from_id(tree.id, game_state.TILE_SIZE)
