@@ -110,9 +110,9 @@ class Villager(pygame.sprite.Sprite):
                 self.frames[direction].append(frame)
     
     def chopping_woods_animation(self):
-        
+        # Always render chopping animation in the direction where villager was previously walking
         direction = self.last_move_direction
-        current_frames = self.chop_frames[direction]
+        current_frames = self.chop_frames.get(direction, [])
         self.frame_index += self.animation_speed
         if self.frame_index >= len(current_frames):
             self.frame_index = 0
