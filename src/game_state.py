@@ -12,6 +12,8 @@ class GameState:
         self.TILE_SIZE = None
         self.WORLD_MAP = None
         self.MAP_NAME = None
+        # Tree locations: list of (row, col) or (x, y) positions
+        self.tree_locations = []
 
     def add_wood(self, amount):
         self.wood += amount

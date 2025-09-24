@@ -20,7 +20,7 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 from src.config import get as get_config
 from src.map_loader import load_map
 
-class Objects:
+class Board:
     def __init__(self):
 
         # Load map details directly
@@ -40,6 +40,8 @@ class Objects:
         self.create_map()
         # self.add_scout()
         self.add_villager()
+
+        game_state.board = self
 
     def add_villager(self):
 
@@ -103,7 +105,7 @@ class Objects:
                 center_y = y + self.tile_size // 2
                 GreenGrass((x, y), (self.visible_sprites,), cell)
                 if tile_type in ('tree'):
-                    Tree((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    Tree((center_x, center_y), (self.visible_sprites, self.obstacles_sprites, self.tree_sprites), cell)
                 if tile_type in ('home'):
                     Home((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
                 grid_sprite = Grid((center_x, center_y), (self.visible_sprites,), cell)
@@ -115,7 +117,7 @@ class Objects:
         self.grid_cols = cols
 
     def avoid_unit_collisions(self):
-
+        
         # Check for unit collisions
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
         for i in range(len(all_entities)):
@@ -130,24 +132,20 @@ class Objects:
     def avoid_collisions(self):
 
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
-
         # Check for collisions between entities and obstacles
         for entity in all_entities:
-
             collided = pygame.sprite.spritecollideany(entity, self.obstacles_sprites)
             if collided:
-
                 # Reveal fog for obstacle tile when unit collides
                 self.reveal_cell(collided.rect.centerx, collided.rect.centery)
-                
                 # Revert position to previous rect if available
                 if hasattr(entity, 'prev_rect'):
                     entity.rect = entity.prev_rect.copy()
-                
                 # Always reverse direction
                 if hasattr(entity, 'reverse_next_move'):
                     entity.reverse_next_move = True
 
+            
     def reveal_cell(self, x, y):
 
         col = x // self.tile_size
@@ -157,12 +155,17 @@ class Objects:
             grid_sprite.image.set_alpha(20)
 
     def draw_health_bars(self):
+
         living_entities = list(self.villager_sprites) + list(self.scout_sprites)
         # Draw health bars above each entity
         if get_config('SHOW_HEALTH', True):
             for entity in living_entities:
                 if hasattr(entity, 'draw_health_bar'):
                     entity.draw_health_bar(self.display_surface)
+            # Draw health bars for trees
+            for tree in self.tree_sprites:
+                if hasattr(tree, 'draw_health_bar'):
+                    tree.draw_health_bar(self.display_surface)
 
     def run(self):
 
