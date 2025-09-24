@@ -20,7 +20,7 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 from src.config import get as get_config
 from src.map_loader import load_map
 
-class Objects:
+class Board:
     def __init__(self):
 
         # Load map details directly
@@ -28,8 +28,8 @@ class Objects:
         self.width, self.height, self.tile_size, self.world_map = load_map(map_name)
         self.display_surface = pygame.display.get_surface()
         self.visible_sprites = pygame.sprite.Group()
-        self.obstacles_sprites = pygame.sprite.Group()
-        self.tree_sprites = pygame.sprite.Group()
+        game_state.obstacles_sprites = pygame.sprite.Group()
+        game_state.tree_sprites = pygame.sprite.Group()
         self.villager_sprites = pygame.sprite.Group()
         self.scout_sprites = pygame.sprite.Group()
         self.cell_labels = []
@@ -103,9 +103,9 @@ class Objects:
                 center_y = y + self.tile_size // 2
                 GreenGrass((x, y), (self.visible_sprites,), cell)
                 if tile_type in ('tree'):
-                    Tree((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    Tree((center_x, center_y), (self.visible_sprites, game_state.obstacles_sprites, game_state.tree_sprites), cell)
                 if tile_type in ('home'):
-                    Home((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    Home((center_x, center_y), (self.visible_sprites, game_state.obstacles_sprites), cell)
                 grid_sprite = Grid((center_x, center_y), (self.visible_sprites,), cell)
                 self.grid_sprites[(row_idx, col_idx)] = grid_sprite
                 if tile_type == 'home':
@@ -115,7 +115,7 @@ class Objects:
         self.grid_cols = cols
 
     def avoid_unit_collisions(self):
-
+        
         # Check for unit collisions
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
         for i in range(len(all_entities)):
@@ -130,20 +130,15 @@ class Objects:
     def avoid_collisions(self):
 
         all_entities = list(self.villager_sprites) + list(self.scout_sprites)
-
         # Check for collisions between entities and obstacles
         for entity in all_entities:
-
-            collided = pygame.sprite.spritecollideany(entity, self.obstacles_sprites)
+            collided = pygame.sprite.spritecollideany(entity, game_state.obstacles_sprites)
             if collided:
-
                 # Reveal fog for obstacle tile when unit collides
                 self.reveal_cell(collided.rect.centerx, collided.rect.centery)
-                
                 # Revert position to previous rect if available
                 if hasattr(entity, 'prev_rect'):
                     entity.rect = entity.prev_rect.copy()
-                
                 # Always reverse direction
                 if hasattr(entity, 'reverse_next_move'):
                     entity.reverse_next_move = True
@@ -157,6 +152,7 @@ class Objects:
             grid_sprite.image.set_alpha(20)
 
     def draw_health_bars(self):
+
         living_entities = list(self.villager_sprites) + list(self.scout_sprites)
         # Draw health bars above each entity
         if get_config('SHOW_HEALTH', True):
@@ -194,7 +190,7 @@ class Objects:
         self.visible_sprites.draw(self.display_surface)
 
         # Draw trees on top of base tiles but beneath entities
-        self.tree_sprites.draw(self.display_surface)
+        game_state.tree_sprites.draw(self.display_surface)
         self.villager_sprites.draw(self.display_surface)
         self.scout_sprites.draw(self.display_surface)
 

@@ -1,4 +1,7 @@
 import pygame
+import itertools
+import string
+
 from src.config import get as get_config
 from src.game_state import game_state
 
@@ -35,6 +38,33 @@ def bottom_panel(display_surface):
             # text_x = 420 + idx * 300
             # text_y = HEIGHT + 8
             # self.display_surface.blit(pid_text, (text_x, text_y))
+
+def get_tree_center_from_id(tree_id, tile_size):
+    """
+    Given a tree cell id (e.g. 'aa0'), return its center (x, y) coordinates.
+    Assumes id is two letters + column index, and rows are iterated in order.
+    """
+
+    # Parse row string and col index
+    row_str = tree_id[:2]
+    col_str = tree_id[2:]
+    try:
+        col_idx = int(col_str)
+    except ValueError:
+        return None, None
+    # Find row index by iterating product of ascii_lowercase
+    a = string.ascii_lowercase
+    com = list(itertools.product(a, a))
+    row_idx = None
+    for idx, tup in enumerate(com):
+        if ''.join(tup) == row_str:
+            row_idx = idx
+            break
+    if row_idx is None:
+        return None, None
+    x = col_idx * tile_size + tile_size // 2
+    y = row_idx * tile_size + tile_size // 2
+    return x, y
 
 if __name__ == '__main__':
 

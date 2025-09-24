@@ -1,9 +1,11 @@
 import pygame
 import sys
-from src import Objects
+from src import Board
 from src.config import get as get_config
 from src import game_state
 from src.map_loader import load_map
+
+from src import utils
 
 class Game:
     def __init__(self):
@@ -26,11 +28,11 @@ class Game:
 
         pygame.init()
         panel_height = get_config('PANEL_HEIGHT', 48)
-        screen_height = get_config('SCREEN_HEIGHT', game_state.HEIGHT + panel_height)
+        screen_height = game_state.HEIGHT + panel_height
         self.screen = pygame.display.set_mode((game_state.WIDTH, screen_height))
         pygame.display.set_caption(f"EMPIRES - {game_state.MAP_NAME}")
         self.clock = pygame.time.Clock()
-        self.objects = Objects()
+        self.board = Board()
 
     def run(self):
         """
@@ -50,9 +52,15 @@ class Game:
             if keys[pygame.K_ESCAPE]:
                 pygame.quit()
                 sys.exit()
-            self.objects.run()
+            self.board.run()
             pygame.display.update()
             self.clock.tick(get_config('FPS', 60))
+
+            # trees = list(game_state.tree_sprites)
+            # for tree in trees:
+            #     print(f"Tree: {tree.id} Wood: {tree.wood}")
+            #     x, y = utils.get_tree_center_from_id(tree.id, game_state.TILE_SIZE)
+            #     print(f"Tree Center: ({x}, {y})")
 
 if __name__ == '__main__':
     game = Game()
