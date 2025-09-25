@@ -10,7 +10,7 @@ from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
 from src.villager.villager import Villager
 from src.scout import Scout
-from src.game_state import game_state
+from src.game_state import current_game_state
 
 from src.utils import bottom_panel
 
@@ -18,6 +18,8 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
 from src.config import get as get_config
 from src.map_loader import load_map
+
+from agent import agent
 
 class Board:
     def __init__(self):
@@ -40,7 +42,7 @@ class Board:
         # self.add_scout()
         self.add_villager()
 
-        game_state.board = self
+        current_game_state.board = self
 
     def add_villager(self):
 

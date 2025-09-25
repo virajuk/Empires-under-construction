@@ -40,4 +40,4 @@ class GameState:
         self.gold = 0
         self.food = 0
 
-game_state = GameState()
+current_game_state = GameState()

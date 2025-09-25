@@ -1,5 +1,5 @@
 import pygame
-from src.game_state import game_state
+from src.game_state import current_game_state
 
 class WoodVillager():
 
@@ -16,15 +16,15 @@ class WoodVillager():
     def can_drop_wood(self):
 
         """Check if villager is adjacent to a home tile to allow wood drop."""
-        villager_col = self.rect.centerx // game_state.TILE_SIZE
-        villager_row = self.rect.centery // game_state.TILE_SIZE
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
         adjacent_positions = [
             (villager_row - 1, villager_col),  # up
             (villager_row + 1, villager_col),  # down
             (villager_row, villager_col - 1),  # left
             (villager_row, villager_col + 1),  # right
         ]
-        world_map = game_state.WORLD_MAP
+        world_map = current_game_state.WORLD_MAP
         if not world_map:
             return False
         for row, col in adjacent_positions:
@@ -39,16 +39,16 @@ class WoodVillager():
         if self.wood_carried > 0 and self.can_drop_wood():
             dropped = self.wood_carried
             self.wood_carried = 0
-            game_state.add_wood(dropped)
-            game_state.update_score(dropped*1.2)
+            current_game_state.add_wood(dropped)
+            current_game_state.update_score(dropped*1.2)
             return dropped
         return 0
 
     def gather_wood_from_tree(self, tree_sprites):
 
         """Gather wood when chopping"""
-        villager_col = self.rect.centerx // game_state.TILE_SIZE
-        villager_row = self.rect.centery // game_state.TILE_SIZE
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
         adjacent_positions = [
             (villager_row - 1, villager_col),  # up
             (villager_row + 1, villager_col),  # down
@@ -56,8 +56,8 @@ class WoodVillager():
             (villager_row, villager_col + 1),  # right
         ]
         for tree in tree_sprites:
-            tree_col = tree.rect.centerx // game_state.TILE_SIZE
-            tree_row = tree.rect.centery // game_state.TILE_SIZE
+            tree_col = tree.rect.centerx // current_game_state.TILE_SIZE
+            tree_row = tree.rect.centery // current_game_state.TILE_SIZE
             if (tree_row, tree_col) in adjacent_positions:
                 wood_gathered = min(1, self.max_wood_capacity - self.wood_carried)
                 if wood_gathered > 0:
@@ -70,8 +70,8 @@ class WoodVillager():
 
         """Check if villager is adjacent to a tree and can chop it"""
         # Get villager's grid position
-        villager_col = self.rect.centerx // game_state.TILE_SIZE
-        villager_row = self.rect.centery // game_state.TILE_SIZE
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
         
         # Check adjacent tiles (up, down, left, right)
         adjacent_positions = [
@@ -80,7 +80,7 @@ class WoodVillager():
             (villager_row, villager_col - 1),  # left
             (villager_row, villager_col + 1),  # right
         ]
-        world_map = game_state.WORLD_MAP
+        world_map = current_game_state.WORLD_MAP
         if not world_map:
             return False
             
@@ -95,8 +95,8 @@ class WoodVillager():
 
         """Get the direction towards the nearest adjacent tree"""
         # Get villager's grid position
-        villager_col = self.rect.centerx // game_state.TILE_SIZE
-        villager_row = self.rect.centery // game_state.TILE_SIZE
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
         
         # Check adjacent tiles with their directions
         adjacent_checks = [
@@ -106,7 +106,7 @@ class WoodVillager():
             (villager_row, villager_col + 1, 'right'), # right
         ]
         
-        world_map = game_state.WORLD_MAP
+        world_map = current_game_state.WORLD_MAP
         if not world_map:
             return self.last_move_direction
             
@@ -125,8 +125,8 @@ class WoodVillager():
         
         # Damage adjacent trees every second
         if now - self.last_chop_time >= 1000:  # 1000ms = 1 second
-            if hasattr(game_state, 'board') and hasattr(game_state.board, 'tree_sprites'):
-                tree_found = self.gather_wood_from_tree(game_state.board.tree_sprites)
+            if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'tree_sprites'):
+                tree_found = self.gather_wood_from_tree(current_game_state.board.tree_sprites)
                 if not tree_found:
                     # No trees left to chop, stop chopping
                     self.chopping = False
@@ -158,7 +158,7 @@ class WoodVillager():
                     cy = i * frame_height + frame_height // 2
                     crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
                     frame = sprite_sheet.subsurface(crop_rect).copy()
-                    frame = pygame.transform.scale(frame, (game_state.TILE_SIZE, game_state.TILE_SIZE))
+                    frame = pygame.transform.scale(frame, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
                     if frame.get_flags() & pygame.SRCALPHA:
                         frame = frame.convert_alpha()
                     else:
