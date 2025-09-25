@@ -16,7 +16,6 @@ from src.utils import bottom_panel
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
-
 from src.config import get as get_config
 from src.map_loader import load_map
 
@@ -145,7 +144,6 @@ class Board:
                 if hasattr(entity, 'reverse_next_move'):
                     entity.reverse_next_move = True
 
-            
     def reveal_cell(self, x, y):
 
         col = x // self.tile_size
@@ -168,7 +166,7 @@ class Board:
             if hasattr(tree, 'draw_health_bar') and hasattr(tree, 'wood') and hasattr(tree, 'max_wood'):
                 if tree.wood < tree.max_wood:  # Only show if tree has been chopped
                     tree.draw_health_bar(self.display_surface)
-    
+
     def run(self):
 
         # Update animation and movement

@@ -1,7 +1,7 @@
  # Game configuration
 SHOW_HEALTH: false
 FPS: 60
-PANEL_HEIGHT: 48
+PANEL_HEIGHT: 96
 SELECTED_MAP: map_3
 # Toggle AI movement for entities
 AI_MODE: false  # Enable or disable AI mode
