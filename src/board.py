@@ -8,7 +8,7 @@ import numpy as np
 from src.config import get as get_config
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
-from src.villager import Villager
+from src.villager.villager import Villager
 from src.scout import Scout
 from src.game_state import game_state
 
@@ -162,11 +162,13 @@ class Board:
             for entity in living_entities:
                 if hasattr(entity, 'draw_health_bar'):
                     entity.draw_health_bar(self.display_surface)
-            # Draw health bars for trees
-            for tree in self.tree_sprites:
-                if hasattr(tree, 'draw_health_bar'):
+        
+        # Draw health bars above trees that have been chopped
+        for tree in self.tree_sprites:
+            if hasattr(tree, 'draw_health_bar') and hasattr(tree, 'wood') and hasattr(tree, 'max_wood'):
+                if tree.wood < tree.max_wood:  # Only show if tree has been chopped
                     tree.draw_health_bar(self.display_surface)
-
+    
     def run(self):
 
         # Update animation and movement
@@ -197,7 +199,18 @@ class Board:
         self.visible_sprites.draw(self.display_surface)
 
         # Draw trees on top of base tiles but beneath entities
-        self.tree_sprites.draw(self.display_surface)
+        if get_config('FOG_OF_WAR', True):
+            # Only draw trees in revealed areas
+            for tree in self.tree_sprites:
+                tree_col = tree.rect.centerx // self.tile_size
+                tree_row = tree.rect.centery // self.tile_size
+                grid_sprite = self.grid_sprites.get((tree_row, tree_col))
+                if grid_sprite and grid_sprite.image.get_alpha() <= 20:  # Revealed area
+                    self.display_surface.blit(tree.image, tree.rect)
+        else:
+            # No fog of war, draw all trees
+            self.tree_sprites.draw(self.display_surface)
+        
         self.villager_sprites.draw(self.display_surface)
         self.scout_sprites.draw(self.display_surface)
 

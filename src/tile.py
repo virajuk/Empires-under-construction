@@ -2,6 +2,7 @@ import random
 from glob import glob
 import pygame
 from src.game_state import game_state
+from src.config import get as get_config
 
 class GreenGrass(pygame.sprite.Sprite):
     def __init__(self, pos, groups, id):
@@ -31,7 +32,7 @@ class Water(pygame.sprite.Sprite):
 
 class Grid(pygame.sprite.Sprite):
     def __init__(self, pos, groups, id):
-        from src.config import get as get_config
+        
         super().__init__(groups)
         self.image = pygame.image.load('graphics/grid/grid.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (game_state.TILE_SIZE, game_state.TILE_SIZE))

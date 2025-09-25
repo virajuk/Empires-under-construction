@@ -5,4 +5,4 @@ PANEL_HEIGHT: 48
 SELECTED_MAP: map_3
 # Toggle AI movement for entities
 AI_MODE: false  # Enable or disable AI mode
-FOG_OF_WAR: false  # Toggle fog of war on/off
+FOG_OF_WAR: true  # Toggle fog of war on/off
