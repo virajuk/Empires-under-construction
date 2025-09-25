@@ -103,82 +103,86 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 cell_id, (center_x, center_y) = random.choice(cell_labels)
                 return (center_x, center_y), cell_id
             return None, None
+        
+    def manual_control(self):
+
+        move_x, move_y = 0, 0
+        if self.keys[pygame.K_w]:
+            move_y = -1
+            self.current_direction = 'up'
+        elif self.keys[pygame.K_s]:
+            move_y = 1
+            self.current_direction = 'down'
+        if self.keys[pygame.K_a]:
+            move_x = -1
+            self.current_direction = 'left'
+        elif self.keys[pygame.K_d]:
+            move_x = 1
+            self.current_direction = 'right'
+        self.direction.x = move_x
+        self.direction.y = move_y
+        self.ai_mode = False
+
+        # Drop wood with 'g' key (only once per press)
+        if self.keys[pygame.K_g]:
+            if not hasattr(self, '_drop_toggle_last') or not self._drop_toggle_last:
+                self.drop_wood()
+            self._drop_toggle_last = True
+        else:
+            self._drop_toggle_last = False
+
+        # Chop wood with 'c' key (only once per press)
+        if self.keys[pygame.K_c]:
+            if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
+                # Only allow chopping if adjacent to a tree
+                if self.can_chop_tree():
+                    self.chopping = not self.chopping
+            self._chop_toggle_last = True
+        else:
+            self._chop_toggle_last = False
+
+    def ai_control(self, now):
+
+        move_x, move_y = 0, 0
+        if now > self.ai_next_change:
+            direction = random.choices(
+                self.ai_directions,
+                weights=[3, 3, 3, 3, 1], k=1
+            )[0]
+            if direction == 'up':
+                move_y = -1
+                self.current_direction = 'up'
+            elif direction == 'down':
+                move_y = 1
+                self.current_direction = 'down'
+            elif direction == 'left':
+                move_x = -1
+                self.current_direction = 'left'
+            elif direction == 'right':
+                move_x = 1
+                self.current_direction = 'right'
+            else:
+                move_x, move_y = 0, 0
+            self.direction.x = move_x
+            self.direction.y = move_y
+
+            self.ai_move_duration = random.randint(500, 2000)
+            self.ai_next_change = now + self.ai_move_duration
 
     def update(self):
-
+        
         now = pygame.time.get_ticks()
-        keys = pygame.key.get_pressed()
+        self.keys = pygame.key.get_pressed()
 
         # Check if manual control is enabled (AI_MODE is False)
         if not get_config('AI_MODE', True):
-            move_x, move_y = 0, 0
-            if keys[pygame.K_w]:
-                move_y = -1
-                self.current_direction = 'up'
-            elif keys[pygame.K_s]:
-                move_y = 1
-                self.current_direction = 'down'
-            if keys[pygame.K_a]:
-                move_x = -1
-                self.current_direction = 'left'
-            elif keys[pygame.K_d]:
-                move_x = 1
-                self.current_direction = 'right'
-            self.direction.x = move_x
-            self.direction.y = move_y
-            self.ai_mode = False
-
-            # Drop wood with 'g' key (only once per press)
-            if keys[pygame.K_g]:
-                if not hasattr(self, '_drop_toggle_last') or not self._drop_toggle_last:
-                    self.drop_wood()
-                self._drop_toggle_last = True
-            else:
-                self._drop_toggle_last = False
-
-            # Chop wood with 'c' key (only once per press)
-            if keys[pygame.K_c]:
-                if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
-                    # Only allow chopping if adjacent to a tree
-                    if self.can_chop_tree():
-                        self.chopping = not self.chopping
-                self._chop_toggle_last = True
-            else:
-                self._chop_toggle_last = False
-
+            self.manual_control()
         else:
-            self.ai_mode = True
+            self.ai_control(now)
 
         self.reach_maximum_resource_carrying_limit()
         
         self.prev_rect = self.rect.copy()
-        
-        if self.ai_mode:
-            move_x, move_y = 0, 0
-            if now > self.ai_next_change:
-                direction = random.choices(
-                    self.ai_directions,
-                    weights=[3, 3, 3, 3, 1], k=1
-                )[0]
-                if direction == 'up':
-                    move_y = -1
-                    self.current_direction = 'up'
-                elif direction == 'down':
-                    move_y = 1
-                    self.current_direction = 'down'
-                elif direction == 'left':
-                    move_x = -1
-                    self.current_direction = 'left'
-                elif direction == 'right':
-                    move_x = 1
-                    self.current_direction = 'right'
-                else:
-                    move_x, move_y = 0, 0
-                self.direction.x = move_x
-                self.direction.y = move_y
-
-                self.ai_move_duration = random.randint(500, 2000)
-                self.ai_next_change = now + self.ai_move_duration
         
         self.is_moving = self.direction.magnitude() > 0
 
