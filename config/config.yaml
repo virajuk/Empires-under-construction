@@ -1,7 +1,8 @@
  # Game configuration
-SHOW_HEALTH: true
+SHOW_HEALTH: false
 FPS: 60
 PANEL_HEIGHT: 48
-SCREEN_HEIGHT: 752  # HEIGHT + PANEL_HEIGHT (704 + 48)
 SELECTED_MAP: map_3
+# Toggle AI movement for entities
+AI_MODE: false  # Enable or disable AI mode
 FOG_OF_WAR: false  # Toggle fog of war on/off
