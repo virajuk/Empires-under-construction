@@ -119,9 +119,7 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
         elif self.keys[pygame.K_d]:
             move_x = 1
             self.current_direction = 'right'
-        self.direction.x = move_x
-        self.direction.y = move_y
-        self.ai_mode = False
+        self.direction.x, self.direction.y = move_x, move_y
 
         # Drop wood with 'g' key (only once per press)
         if self.keys[pygame.K_g]:
@@ -163,9 +161,8 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 self.current_direction = 'right'
             else:
                 move_x, move_y = 0, 0
-            self.direction.x = move_x
-            self.direction.y = move_y
-
+            self.direction.x, self.direction.y = move_x, move_y
+            
             self.ai_move_duration = random.randint(500, 2000)
             self.ai_next_change = now + self.ai_move_duration
 
@@ -197,20 +194,14 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
         # If villager is chopping, override movement and play chopping animation
         if self.chopping:
-            self.direction.x = 0
-            self.direction.y = 0
+
+            self.direction.x, self.direction.y = 0, 0
             self.current_direction = self.last_move_direction
-            self.chopping_woods_animation()
-            
-            # Damage adjacent trees every second
-            if now - self.last_chop_time >= 1000:  # 1000ms = 1 second
-                if hasattr(game_state, 'board') and hasattr(game_state.board, 'tree_sprites'):
-                    tree_found = self.gather_wood_from_tree(game_state.board.tree_sprites)
-                    if not tree_found:
-                        # No trees left to chop, stop chopping
-                        self.chopping = False
-                self.last_chop_time = now
+
+            self.chopping_wood(now)
+
         else:
+            # Walking animation
             current_frames = self.frames[self.current_direction]
             if self.is_moving and current_frames:
                 self.frame_index += self.animation_speed

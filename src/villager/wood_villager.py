@@ -119,6 +119,19 @@ class WoodVillager():
         # Fallback to last move direction if no tree found
         return self.last_move_direction
     
+    def chopping_wood(self, now):
+
+        self.chopping_woods_animation()
+        
+        # Damage adjacent trees every second
+        if now - self.last_chop_time >= 1000:  # 1000ms = 1 second
+            if hasattr(game_state, 'board') and hasattr(game_state.board, 'tree_sprites'):
+                tree_found = self.gather_wood_from_tree(game_state.board.tree_sprites)
+                if not tree_found:
+                    # No trees left to chop, stop chopping
+                    self.chopping = False
+            self.last_chop_time = now
+
     def chopping_woods_animation(self):
 
         # Render chopping animation towards the tree tile
