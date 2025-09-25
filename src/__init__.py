@@ -1,6 +1,6 @@
 # deprecated to keep older scripts who import this from breaking
 from src.board import Board
-from src.villager import Villager
+from src.villager.villager import Villager
 from src.scout import Scout
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree

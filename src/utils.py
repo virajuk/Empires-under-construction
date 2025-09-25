@@ -2,6 +2,7 @@ import pygame
 import itertools
 import string
 from collections import deque
+import math
 
 from src.config import get as get_config
 from src.game_state import game_state
@@ -20,7 +21,7 @@ def bottom_panel(display_surface):
         pygame.draw.line(display_surface, (100, 100, 100), (0, game_state.HEIGHT), (game_state.WIDTH, game_state.HEIGHT), 2)
 
         font = pygame.font.SysFont(None, 32)
-        score_text = font.render(f"Score: {game_state.score}", True, (255, 255, 255))
+        score_text = font.render(f"Score: {math.ceil(game_state.score)}", True, (255, 255, 255))
         display_surface.blit(score_text, (16, game_state.HEIGHT + 8))
 
         resource_text = font.render(f"Wood: {game_state.wood}", True, (255, 255, 255))
@@ -32,24 +33,7 @@ def bottom_panel(display_surface):
                 if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
                     villager_wood_text = font.render(f"Villager {idx+1} Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (139, 69, 19))
                     display_surface.blit(villager_wood_text, (280 + idx * 200, game_state.HEIGHT + 8))
-                    break  # Show only first villager with wood for now
-
-        # # Show each villager's and scout's cell id and score in the panel
-        # all_entities = list(self.villager_sprites) + list(self.scout_sprites)
-        # for idx, entity in enumerate(all_entities):
-        #     # Find closest cell label to entity center
-        #     px, py = entity.rect.center
-        #     closest = min(self.cell_labels, key=lambda c: (c[1][0] - px) ** 2 + (c[1][1] - py) ** 2)
-        #     current_cell = closest[0]
-
-            # # Show class name (type) in label
-            # class_name = type(entity).__name__
-            # label = f"{class_name} {idx+1}: {current_cell}  Score: {getattr(entity, 'score', 0)}"
-            # pid_text = font.render(label, True, (0, 255, 255))
-            # # Place after resources, with spacing
-            # text_x = 420 + idx * 300
-            # text_y = HEIGHT + 8
-            # self.display_surface.blit(pid_text, (text_x, text_y))
+                    
 
 def get_tree_center_from_id(tree_id, tile_size):
     """

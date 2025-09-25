@@ -8,7 +8,7 @@ import numpy as np
 from src.config import get as get_config
 from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
-from src.villager import Villager
+from src.villager.villager import Villager
 from src.scout import Scout
 from src.game_state import game_state
 
