@@ -4,6 +4,7 @@ from src.game_state import game_state
 from src.config import get as get_config
 
 class Villager(pygame.sprite.Sprite):
+
     def __init__(self, pos, groups, start_cell=None):
         super().__init__(groups)
         self.frame_index = 0
@@ -26,7 +27,7 @@ class Villager(pygame.sprite.Sprite):
 
         # Wood carrying
         self.wood_carried = 0
-        self.max_wood_capacity = 50
+        self.max_wood_capacity = 10
 
         self.direction = pygame.math.Vector2()
         self.last_move_direction = self.current_direction
@@ -59,6 +60,36 @@ class Villager(pygame.sprite.Sprite):
         except Exception:
             self.chop_frames = {d: [] for d in ['up', 'left', 'down', 'right']}
     
+    def can_drop_wood(self):
+
+        """Check if villager is adjacent to a home tile to allow wood drop."""
+        villager_col = self.rect.centerx // game_state.TILE_SIZE
+        villager_row = self.rect.centery // game_state.TILE_SIZE
+        adjacent_positions = [
+            (villager_row - 1, villager_col),  # up
+            (villager_row + 1, villager_col),  # down
+            (villager_row, villager_col - 1),  # left
+            (villager_row, villager_col + 1),  # right
+        ]
+        world_map = game_state.WORLD_MAP
+        if not world_map:
+            return False
+        for row, col in adjacent_positions:
+            if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
+                if world_map[row][col] == 'home':
+                    return True
+        return False
+
+    def drop_wood(self):
+
+        """Drop all carried wood if adjacent to home tile. Returns amount dropped and adds to game state."""
+        if self.wood_carried > 0 and self.can_drop_wood():
+            dropped = self.wood_carried
+            self.wood_carried = 0
+            game_state.add_wood(dropped)
+            return dropped
+        return 0
+
     def load_axe_frames(self):
         try:
             sprite_sheet = pygame.image.load('graphics/villager/walk_with_axe.png').convert_alpha()
@@ -84,11 +115,12 @@ class Villager(pygame.sprite.Sprite):
     
     def draw_health_bar(self, surface):
 
-        bar_width = game_state.TILE_SIZE*0.7
+        bar_width = game_state.TILE_SIZE * 0.7
         bar_height = 8
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top
 
+        # Draw health bar
         pygame.draw.rect(surface, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
         health_ratio = max(0, min(1, self.health / 100))
         fill_width = int(bar_width * health_ratio)
@@ -117,6 +149,7 @@ class Villager(pygame.sprite.Sprite):
                 self.frames[direction].append(frame)
     
     def chopping_woods_animation(self):
+
         # Render chopping animation towards the tree tile
         direction = self.get_tree_direction()
         current_frames = self.chop_frames.get(direction, [])
@@ -127,6 +160,7 @@ class Villager(pygame.sprite.Sprite):
             self.image = current_frames[int(self.frame_index)]
     
     def walk_with_axe_animation(self):
+
         current_frames = self.axe_frames[self.current_direction]
         if self.is_moving and current_frames:
             self.frame_index += self.animation_speed
@@ -168,6 +202,7 @@ class Villager(pygame.sprite.Sprite):
             self.chopping = False
 
     def get_tree_direction(self):
+
         """Get the direction towards the nearest adjacent tree"""
         # Get villager's grid position
         villager_col = self.rect.centerx // game_state.TILE_SIZE
@@ -195,6 +230,7 @@ class Villager(pygame.sprite.Sprite):
         return self.last_move_direction
     
     def gather_wood_from_tree(self, tree_sprites):
+
         """Gather wood when chopping"""
         # Get villager's grid position
         villager_col = self.rect.centerx // game_state.TILE_SIZE
@@ -218,8 +254,6 @@ class Villager(pygame.sprite.Sprite):
                 if wood_gathered > 0:
                     tree.reduce_wood(wood_gathered)
                     self.wood_carried += wood_gathered
-                    # Add wood to game state resources
-                    game_state.add_wood(wood_gathered)
                 return True  # Tree was found and chopped
         
         return False  # No tree found to chop
@@ -256,7 +290,6 @@ class Villager(pygame.sprite.Sprite):
                 return (center_x, center_y), cell_id
             return None, None
 
-
     def update(self):
 
         now = pygame.time.get_ticks()
@@ -280,51 +313,59 @@ class Villager(pygame.sprite.Sprite):
             self.direction.x = move_x
             self.direction.y = move_y
             self.ai_mode = False
+
+            # Drop wood with 'g' key (only once per press)
+            if keys[pygame.K_g]:
+                if not hasattr(self, '_drop_toggle_last') or not self._drop_toggle_last:
+                    self.drop_wood()
+                self._drop_toggle_last = True
+            else:
+                self._drop_toggle_last = False
+
+            # Chop wood with 'c' key (only once per press)
+            if keys[pygame.K_c]:
+                if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
+                    # Only allow chopping if adjacent to a tree
+                    if self.can_chop_tree():
+                        self.chopping = not self.chopping
+                self._chop_toggle_last = True
+            else:
+                self._chop_toggle_last = False
+
         else:
             self.ai_mode = True
 
-        # if keys[pygame.K_c]:
-        #     if not hasattr(self, '_axe_toggle_last') or not self._axe_toggle_last:
-        #         self.using_axe = not self.using_axe
-        #     self._axe_toggle_last = True
-        # else:
-        #     self._axe_toggle_last = False
-
         self.reach_maximum_resource_carrying_limit()
-        
-        if keys[pygame.K_p]:
-            if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
-                # Only allow chopping if adjacent to a tree
-                if self.can_chop_tree():
-                    self.chopping = not self.chopping
-            self._chop_toggle_last = True
-        else:
-            self._chop_toggle_last = False
         
         self.prev_rect = self.rect.copy()
         
         if self.ai_mode:
+            move_x, move_y = 0, 0
             if now > self.ai_next_change:
                 direction = random.choices(
                     self.ai_directions,
                     weights=[3, 3, 3, 3, 1], k=1
                 )[0]
                 if direction == 'up':
-                    self.direction.x, self.direction.y = 0, -1
+                    move_y = -1
                     self.current_direction = 'up'
                 elif direction == 'down':
-                    self.direction.x, self.direction.y = 0, 1
+                    move_y = 1
                     self.current_direction = 'down'
                 elif direction == 'left':
-                    self.direction.x, self.direction.y = -1, 0
+                    move_x = -1
                     self.current_direction = 'left'
                 elif direction == 'right':
-                    self.direction.x, self.direction.y = 1, 0
+                    move_x = 1
                     self.current_direction = 'right'
                 else:
-                    self.direction.x, self.direction.y = 0, 0
+                    move_x, move_y = 0, 0
+                self.direction.x = move_x
+                self.direction.y = move_y
+
                 self.ai_move_duration = random.randint(500, 2000)
                 self.ai_next_change = now + self.ai_move_duration
+        
         self.is_moving = self.direction.magnitude() > 0
 
         if self.direction.magnitude() > 0:
@@ -332,14 +373,17 @@ class Villager(pygame.sprite.Sprite):
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
 
+        # Keep within screen bounds
         if self.rect.left < 0 or self.rect.right > game_state.WIDTH or self.rect.top < 0 or self.rect.bottom > game_state.HEIGHT:
             self.rect.clamp_ip(pygame.Rect(0, 0, game_state.WIDTH, game_state.HEIGHT))
-    
+
+        # If villager is chopping, override movement and play chopping animation
         if self.chopping:
             self.direction.x = 0
             self.direction.y = 0
             self.current_direction = self.last_move_direction
             self.chopping_woods_animation()
+
             # Damage adjacent trees every second
             if now - self.last_chop_time >= 1000:  # 1000ms = 1 second
                 if hasattr(game_state, 'board') and hasattr(game_state.board, 'tree_sprites'):
@@ -348,6 +392,7 @@ class Villager(pygame.sprite.Sprite):
                         # No trees left to chop, stop chopping
                         self.chopping = False
                 self.last_chop_time = now
+        
         elif self.using_axe:
             self.walk_with_axe_animation()
         else:
@@ -361,3 +406,7 @@ class Villager(pygame.sprite.Sprite):
             elif current_frames:
                 self.image = current_frames[0]
 
+class WoodVillager(Villager):
+    def __init__(self, pos, groups, start_cell=None):
+        super().__init__(pos, groups, start_cell)
+        self.using_axe = True

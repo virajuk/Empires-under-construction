@@ -1,5 +1,5 @@
  # Game configuration
-SHOW_HEALTH: true
+SHOW_HEALTH: false
 FPS: 60
 PANEL_HEIGHT: 48
 SELECTED_MAP: map_3
