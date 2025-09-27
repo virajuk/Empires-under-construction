@@ -2,6 +2,7 @@ import random
 from glob import glob
 import pygame
 from src.game_state import current_game_state
+from agent import rl_agent
 
 class Tree(pygame.sprite.Sprite):
     def __init__(self, pos, groups, id):
@@ -11,14 +12,15 @@ class Tree(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
         self.rect = self.image.get_rect(center=pos)
         self.id = id
-        self.wood = 100
-        self.max_wood = 100
+        self.wood = 25
+        self.max_wood = 25
 
     def reduce_wood(self, amount):
         """Reduce tree's wood by the specified amount"""
         self.wood = max(0, self.wood - amount)
         if self.wood <= 0:
             self.kill()  # Remove tree when wood reaches 0
+            rl_agent.tree = None  # Reset agent's target tree when it's gone
     
     def draw_health_bar(self, surface):
 

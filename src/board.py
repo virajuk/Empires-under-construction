@@ -19,8 +19,6 @@ from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 from src.config import get as get_config
 from src.map_loader import load_map
 
-from agent import agent
-
 class Board:
     def __init__(self):
 

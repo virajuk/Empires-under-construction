@@ -1,3 +1,3 @@
-from agent.rl_agent import agent
+from agent.rl_agent import rl_agent
     
-__all__ = ['agent']
+__all__ = ['rl_agent']

@@ -31,6 +31,13 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
         self.rect = self.image.get_rect(center=pos)
         self.prev_rect = self.rect.copy()
 
+        self.name = self.random_name()
+
+    def random_name(self):
+
+        names = ["Agnes Axebearer", "Brunhild the Woodcutter", "Eda Timberhand", "Thyra Hewstone", "Griselda Ironarm"]
+        return random.choice(names)
+
     def draw_health_bar(self, surface):
 
         bar_width = current_game_state.TILE_SIZE * 0.7

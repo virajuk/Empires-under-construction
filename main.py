@@ -5,7 +5,6 @@ from src.config import get as get_config
 from src import current_game_state
 from src.map_loader import load_map
 from src import utils
-# from agent import Agent
 
 class Game:
 
@@ -34,7 +33,6 @@ class Game:
         pygame.display.set_caption(f"EMPIRES - {current_game_state.MAP_NAME}")
         self.clock = pygame.time.Clock()
         self.board = Board()
-        # self.agent = Agent(game_state)
 
     def run(self):
         """
@@ -57,11 +55,6 @@ class Game:
             self.board.run()
             pygame.display.update()
             self.clock.tick(get_config('FPS', 60))
-
-            # tree = self.agent.pick_a_tree()
-            # if tree:
-            #     # Chop down the tree
-            #     print(f"Chopping tree {tree.id} at position {tree.rect.center}")
 
 if __name__ == '__main__':
     game = Game()
