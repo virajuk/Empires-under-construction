@@ -10,12 +10,12 @@ from src.tile import GreenGrass, Sand, Water, Grid, Home
 from src.trees import Tree
 from src.villager.villager import Villager
 from src.scout import Scout
-from src.game_state import game_state
+from src.game_state import current_game_state
+from agent import rl_agent
 
 from src.utils import bottom_panel
 
 from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
-
 
 from src.config import get as get_config
 from src.map_loader import load_map
@@ -41,7 +41,7 @@ class Board:
         # self.add_scout()
         self.add_villager()
 
-        game_state.board = self
+        current_game_state.board = self
 
     def add_villager(self):
 
@@ -145,7 +145,6 @@ class Board:
                 if hasattr(entity, 'reverse_next_move'):
                     entity.reverse_next_move = True
 
-            
     def reveal_cell(self, x, y):
 
         col = x // self.tile_size
@@ -168,12 +167,14 @@ class Board:
             if hasattr(tree, 'draw_health_bar') and hasattr(tree, 'wood') and hasattr(tree, 'max_wood'):
                 if tree.wood < tree.max_wood:  # Only show if tree has been chopped
                     tree.draw_health_bar(self.display_surface)
-    
+
     def run(self):
 
         # Update animation and movement
         self.villager_sprites.update()
         self.scout_sprites.update()
+
+        rl_agent.run()
 
         # Reveal fog for scouts
         for scout in self.scout_sprites:

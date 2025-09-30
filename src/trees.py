@@ -1,18 +1,18 @@
 import random
 from glob import glob
 import pygame
-from src.game_state import game_state
+from src.game_state import current_game_state
 
 class Tree(pygame.sprite.Sprite):
     def __init__(self, pos, groups, id):
         super().__init__(groups)
         self.images = glob('graphics/tree/*.png')
         self.image = pygame.image.load(random.choice(self.images)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (game_state.TILE_SIZE, game_state.TILE_SIZE))
+        self.image = pygame.transform.scale(self.image, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
         self.rect = self.image.get_rect(center=pos)
         self.id = id
-        self.wood = 100
-        self.max_wood = 100
+        self.wood = 25
+        self.max_wood = 25
 
     def reduce_wood(self, amount):
         """Reduce tree's wood by the specified amount"""
@@ -23,7 +23,7 @@ class Tree(pygame.sprite.Sprite):
     def draw_health_bar(self, surface):
 
         """Draw a health bar above the tree sprite"""
-        bar_width = game_state.TILE_SIZE * 0.8
+        bar_width = current_game_state.TILE_SIZE * 0.8
         bar_height = 6
         bar_x = self.rect.centerx - bar_width // 2
         bar_y = self.rect.top

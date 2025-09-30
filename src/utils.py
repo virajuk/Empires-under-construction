@@ -5,37 +5,59 @@ from collections import deque
 import math
 
 from src.config import get as get_config
-from src.game_state import game_state
+from src.game_state import current_game_state
+from agent import rl_agent
+
+def get_font(size=32):
+
+    """Get a font object, creating it only when pygame is initialized"""
+    return pygame.font.SysFont(None, size)
 
 def create_tree_patch(center, size):
 
-    print(center, size, game_state.TILE_SIZE)
+    print(center, size, current_game_state.TILE_SIZE)
 
 def bottom_panel(display_surface):
-        
-        # Draw bottom panel in area settings.HEIGHT to config SCREEN_HEIGHT
-        panel_height = get_config('PANEL_HEIGHT', 48)
-        # screen_height = game_state.HEIGHT + panel_height
-        panel_rect = pygame.Rect(0, game_state.HEIGHT, game_state.WIDTH, panel_height)
-        pygame.draw.rect(display_surface, (40, 40, 40), panel_rect)
-        pygame.draw.line(display_surface, (100, 100, 100), (0, game_state.HEIGHT), (game_state.WIDTH, game_state.HEIGHT), 2)
+    
+    # Draw bottom panel in area settings.HEIGHT to config SCREEN_HEIGHT
+    panel_height = get_config('PANEL_HEIGHT', 48)
+    # screen_height = game_state.HEIGHT + panel_height
+    panel_rect = pygame.Rect(0, current_game_state.HEIGHT, current_game_state.WIDTH, panel_height)
+    pygame.draw.rect(display_surface, (40, 40, 40), panel_rect)
+    pygame.draw.line(display_surface, (100, 100, 100), (0, current_game_state.HEIGHT), (current_game_state.WIDTH, current_game_state.HEIGHT), 2)
 
-        font = pygame.font.SysFont(None, 32)
-        score_text = font.render(f"Score: {math.ceil(game_state.score)}", True, (255, 255, 255))
-        display_surface.blit(score_text, (16, game_state.HEIGHT + 8))
+    font = get_font(32)
+    score_text = font.render(f"Score: {math.ceil(current_game_state.score)}", True, (255, 255, 255))
+    display_surface.blit(score_text, (16, current_game_state.HEIGHT + 8))
 
-        resource_text = font.render(f"Wood: {game_state.wood}", True, (255, 255, 255))
-        display_surface.blit(resource_text, (128, game_state.HEIGHT + 8))
+    resource_text = font.render(f"Wood: {current_game_state.wood}", True, (255, 255, 255))
+    display_surface.blit(resource_text, (128, current_game_state.HEIGHT + 8))
+    
+    go_for_a_tree(display_surface)
+
+    # Show villager wood carrying info
+    if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'villager_sprites'):
+        for idx, villager in enumerate(current_game_state.board.villager_sprites):
+            if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
+                villager_wood_text = font.render(f"{villager.name} carrying Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
+                display_surface.blit(villager_wood_text, (280 + idx * 200, current_game_state.HEIGHT + 8))
         
-        # Show villager wood carrying info
-        if hasattr(game_state, 'board') and hasattr(game_state.board, 'villager_sprites'):
-            for idx, villager in enumerate(game_state.board.villager_sprites):
-                if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
-                    villager_wood_text = font.render(f"Villager {idx+1} Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (139, 69, 19))
-                    display_surface.blit(villager_wood_text, (280 + idx * 200, game_state.HEIGHT + 8))
-                    
+def go_for_a_tree(display_surface):
+
+    font = get_font(32)
+    if rl_agent.tree is not None:
+        agent_text_string = f"Agent Target Tree: {rl_agent.tree.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
+    else:
+        agent_text_string = f"Agent Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
+    agent_text = font.render(agent_text_string, True, (255, 255, 255))
+    display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 48))
+
+    # path = shortest_path(agent.villager.rect.center, agent.tree.rect.center, current_game_state.HEIGHT, current_game_state.WIDTH)
+    # path_text = font.render(f"Path: {path}", True, (255, 255, 255))
+    # display_surface.blit(path_text, (360, current_game_state.HEIGHT + 48))
 
 def get_tree_center_from_id(tree_id, tile_size):
+
     """
     Given a tree cell id (e.g. 'aa0'), return its center (x, y) coordinates.
     Assumes id is two letters + column index, and rows are iterated in order.
@@ -63,6 +85,7 @@ def get_tree_center_from_id(tree_id, tile_size):
     return x, y
 
 def shortest_path(start, end, grid_rows, grid_cols, obstacles=None):
+
     """
     Find shortest path from start to end on a grid using BFS.
     start, end: (x, y) coordinates (center of tile)
@@ -76,12 +99,12 @@ def shortest_path(start, end, grid_rows, grid_cols, obstacles=None):
     # Convert coordinates to grid indices
     def to_grid(coord):
         x, y = coord
-        col = x // game_state.TILE_SIZE
-        row = y // game_state.TILE_SIZE
+        col = x // current_game_state.TILE_SIZE
+        row = y // current_game_state.TILE_SIZE
         return row, col
     def to_coord(row, col):
-        x = col * game_state.TILE_SIZE + game_state.TILE_SIZE // 2
-        y = row * game_state.TILE_SIZE + game_state.TILE_SIZE // 2
+        x = col * current_game_state.TILE_SIZE + current_game_state.TILE_SIZE // 2
+        y = row * current_game_state.TILE_SIZE + current_game_state.TILE_SIZE // 2
         return x, y
     start_rc = to_grid(start)
     end_rc = to_grid(end)
