@@ -39,19 +39,18 @@ def bottom_panel(display_surface):
     if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'villager_sprites'):
         for idx, villager in enumerate(current_game_state.board.villager_sprites):
             if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
-                villager_wood_text = font.render(f"{villager.name} Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
+                villager_wood_text = font.render(f"{villager.name} carrying Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
                 display_surface.blit(villager_wood_text, (280 + idx * 200, current_game_state.HEIGHT + 8))
         
 def go_for_a_tree(display_surface):
 
-    if rl_agent.tree is None:
-        rl_agent.pick_a_tree()
-
+    font = get_font(32)
     if rl_agent.tree is not None:
-        rl_agent.pick_villager()
-        font = get_font(32)
-        agent_text = font.render(f"Agent Target Tree: {rl_agent.tree.rect.center} by Villager {rl_agent.villager.rect.center}", True, (255, 255, 255))
-        display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 48))
+        agent_text_string = f"Agent Target Tree: {rl_agent.tree.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
+    else:
+        agent_text_string = f"Agent Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
+    agent_text = font.render(agent_text_string, True, (255, 255, 255))
+    display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 48))
 
     # path = shortest_path(agent.villager.rect.center, agent.tree.rect.center, current_game_state.HEIGHT, current_game_state.WIDTH)
     # path_text = font.render(f"Path: {path}", True, (255, 255, 255))

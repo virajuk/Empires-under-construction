@@ -11,6 +11,7 @@ from src.trees import Tree
 from src.villager.villager import Villager
 from src.scout import Scout
 from src.game_state import current_game_state
+from agent import rl_agent
 
 from src.utils import bottom_panel
 
@@ -172,6 +173,8 @@ class Board:
         # Update animation and movement
         self.villager_sprites.update()
         self.scout_sprites.update()
+
+        rl_agent.run()
 
         # Reveal fog for scouts
         for scout in self.scout_sprites:

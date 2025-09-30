@@ -204,8 +204,8 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
             self.direction.x, self.direction.y = 0, 0
             self.current_direction = self.last_move_direction
-
-            self.chopping_wood(now)
+    
+            # self.chopping_wood(now)
 
         else:
             # Walking animation

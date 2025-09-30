@@ -2,7 +2,6 @@ import random
 from glob import glob
 import pygame
 from src.game_state import current_game_state
-from agent import rl_agent
 
 class Tree(pygame.sprite.Sprite):
     def __init__(self, pos, groups, id):
@@ -20,7 +19,6 @@ class Tree(pygame.sprite.Sprite):
         self.wood = max(0, self.wood - amount)
         if self.wood <= 0:
             self.kill()  # Remove tree when wood reaches 0
-            rl_agent.tree = None  # Reset agent's target tree when it's gone
     
     def draw_health_bar(self, surface):
 
