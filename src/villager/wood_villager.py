@@ -110,23 +110,16 @@ class WoodVillager():
         if self.can_drop_wood():
             return False  # Already at home
             
-        # Find home tile position
+        # # Find home tile position
         world_map = current_game_state.WORLD_MAP
         if not world_map:
             return False
-            
-        home_tile_pos = None
-        for row_idx, row in enumerate(world_map):
-            for col_idx, tile in enumerate(row):
-                if tile == 'home':
-                    home_tile_pos = (row_idx, col_idx)
-                    break
-            if home_tile_pos:
-                break
-                
+        
+        home_tile_pos = current_game_state.home_cell
+
         if not home_tile_pos:
             return False
-            
+        
         home_row, home_col = home_tile_pos
         villager_col = self.rect.centerx // current_game_state.TILE_SIZE
         villager_row = self.rect.centery // current_game_state.TILE_SIZE
