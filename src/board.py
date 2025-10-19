@@ -108,6 +108,7 @@ class Board:
                     Tree((center_x, center_y), (self.visible_sprites, self.obstacles_sprites, self.tree_sprites), cell)
                 if tile_type in ('home'):
                     Home((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
+                    current_game_state.home_cell = (int(row_idx), int(col_idx))
                 grid_sprite = Grid((center_x, center_y), (self.visible_sprites,), cell)
                 self.grid_sprites[(row_idx, col_idx)] = grid_sprite
                 if tile_type == 'home':
