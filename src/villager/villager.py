@@ -35,7 +35,7 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
     def random_name(self):
 
-        names = ["Agnes Axebearer", "Brunhild the Woodcutter", "Eda Timberhand", "Thyra Hewstone", "Griselda Ironarm"]
+        names = ["Eleanor", "Aveline", "Hildegard", "Catalina", "Rhiannon"]
         return random.choice(names)
 
     def draw_health_bar(self, surface):
@@ -77,8 +77,7 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
         if self.max_wood_capacity <= self.wood_carried:
             self.chopping = False
-
-
+    
     @staticmethod
     def spawn_position(cell_labels):
 
@@ -112,7 +111,7 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
             return None, None
         
     def manual_control(self):
-
+        
         move_x, move_y = 0, 0
         if self.keys[pygame.K_w]:
             move_y = -1
@@ -172,6 +171,26 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
         
             self.ai_move_duration = random.randint(500, 2000)
             self.ai_next_change = now + self.ai_move_duration
+
+    def is_at_home(self):
+
+        """Check if villager is at home tile."""
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
+        adjacent_positions = [
+            (villager_row - 1, villager_col),  # up
+            (villager_row + 1, villager_col),  # down
+            (villager_row, villager_col - 1),  # left
+            (villager_row, villager_col + 1),  # right
+        ]
+
+        home_tile_pos = current_game_state.home_cell
+
+        for row, col in adjacent_positions:
+            if (row, col) == home_tile_pos:
+                return True
+        
+        return False
 
     def update(self):
         

@@ -85,6 +85,22 @@ class WoodVillager():
                     return True
         return False
 
+    def is_at_tree(self, tree):
+        """Check if villager is adjacent to the tree (can chop)"""
+        if self is None or tree is None:
+            return False
+        
+        villager_pos = self.rect.center
+        tree_pos = tree.rect.center
+        
+        # Calculate distance
+        dx = abs(villager_pos[0] - tree_pos[0])
+        dy = abs(villager_pos[1] - tree_pos[1])
+        
+        # Check if adjacent (within one tile distance)
+        tile_size = current_game_state.TILE_SIZE
+        return dx <= tile_size and dy <= tile_size
+
     def find_home_position(self):
         """Find the position of the home tile"""
         world_map = current_game_state.WORLD_MAP
@@ -100,11 +116,69 @@ class WoodVillager():
                     return (x, y)
         return None
 
-    def should_return_home(self):
-        """Check if villager should return home (at max capacity)"""
+    def walk_to_tree(self, tree):
+        """Walk the villager to the selected tree"""
+        if self is None or tree is None:
+            return False
+
+        villager_pos = self.rect.center
+        tree_pos = tree.rect.center
+
+        # Calculate direction to tree
+        dx = tree_pos[0] - villager_pos[0]
+        dy = tree_pos[1] - villager_pos[1]
+        
+        # Determine movement direction (one step at a time)
+        move_x = 0
+        move_y = 0
+        
+        # Prioritize larger distance first
+        if abs(dx) > abs(dy):
+            if dx > 0:
+                move_x = 1  # Move right
+            elif dx < 0:
+                move_x = -1  # Move left
+        else:
+            if dy > 0:
+                move_y = 1  # Move down
+            elif dy < 0:
+                move_y = -1  # Move up
+        
+        # Apply movement to villager
+        if move_x != 0 or move_y != 0:
+            # Disable AI mode to allow agent control
+            self.ai_mode = False
+            
+            # Mark villager as under agent control
+            self.agent_controlled = True
+            
+            # Set villager direction and movement (same as walk_to_home)
+            self.direction.x = move_x
+            self.direction.y = move_y
+            
+            # Update current direction for animation
+            if move_x > 0:
+                self.current_direction = 'right'
+            elif move_x < 0:
+                self.current_direction = 'left'
+            elif move_y > 0:
+                self.current_direction = 'down'
+            elif move_y < 0:
+                self.current_direction = 'up'
+
+            # Let the villager's normal update cycle handle movement at consistent speed
+            # (Movement will be applied in villager.update() using normalized direction * speed)
+                
+            return True
+        
+        # Already at tree (adjacent or same position)
+        return False
+
+    def should_drop_wood(self):
+        """Check if villager should drop wood (at max capacity)"""
         return self.wood_carried >= self.max_wood_capacity
 
-    def walk_to_home(self):
+    def walk_to_home_drop_wood(self):
         """Walk villager towards an adjacent position to the home tile"""
         # Check if already adjacent to home
         if self.can_drop_wood():
@@ -150,7 +224,7 @@ class WoodVillager():
         
         if not best_target:
             return False
-            
+        
         target_row, target_col = best_target
         
         # Move towards the best adjacent position with obstacle avoidance
@@ -215,12 +289,12 @@ class WoodVillager():
         # No valid movement found (blocked by obstacles)
         return False
 
-    def is_at_home(self):
-        """Check if villager is adjacent to home (can drop wood)"""
-        return self.can_drop_wood()
+    # def is_at_home(self):
+    #     """Check if villager is adjacent to home (can drop wood)"""
+    #     return self.can_drop_wood()
 
     def get_tree_direction(self):
-        """Get the direction towards the nearest adjacent tree"""
+        """Get the direction towards the nearest adjacent tree for animations"""
         # Get villager's grid position
         villager_col = self.rect.centerx // current_game_state.TILE_SIZE
         villager_row = self.rect.centery // current_game_state.TILE_SIZE
@@ -236,7 +310,7 @@ class WoodVillager():
         world_map = current_game_state.WORLD_MAP
         if not world_map:
             return self.last_move_direction
-            
+        
         for row, col, direction in adjacent_checks:
             # Check bounds
             if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
@@ -245,7 +319,7 @@ class WoodVillager():
         
         # Fallback to last move direction if no tree found
         return self.last_move_direction
-    
+        
     def chopping_wood(self, tree):
         
         now = pygame.time.get_ticks()
