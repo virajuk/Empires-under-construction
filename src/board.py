@@ -7,7 +7,7 @@ import numpy as np
 
 from src.config import get as get_config
 from src.tile import GreenGrass, Sand, Water, Grid, Home
-from src.trees import Tree
+from src.objects import Tree, BerryBush
 from src.villager.villager import Villager
 from src.scout import Scout
 from src.game_state import current_game_state
@@ -27,11 +27,14 @@ class Board:
         map_name = get_config('SELECTED_MAP', 'map_1')
         self.width, self.height, self.tile_size, self.world_map = load_map(map_name)
         self.display_surface = pygame.display.get_surface()
+
         self.visible_sprites = pygame.sprite.Group()
         self.obstacles_sprites = pygame.sprite.Group()
         self.tree_sprites = pygame.sprite.Group()
         self.villager_sprites = pygame.sprite.Group()
         self.scout_sprites = pygame.sprite.Group()
+        self.berry_bush_sprites = pygame.sprite.Group()
+
         self.cell_labels = []
         self.selected_cell_idx = None
         self.last_cell_change = 0
@@ -109,6 +112,8 @@ class Board:
                 if tile_type in ('home'):
                     Home((center_x, center_y), (self.visible_sprites, self.obstacles_sprites), cell)
                     current_game_state.home_cell = (int(row_idx), int(col_idx))
+                if tile_type in ('berry_bush'):
+                    BerryBush((center_x, center_y), (self.visible_sprites, self.obstacles_sprites, self.berry_bush_sprites), cell)
                 grid_sprite = Grid((center_x, center_y), (self.visible_sprites,), cell)
                 self.grid_sprites[(row_idx, col_idx)] = grid_sprite
                 if tile_type == 'home':
