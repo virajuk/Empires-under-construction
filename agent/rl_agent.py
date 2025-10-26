@@ -59,23 +59,23 @@ class Agent():
             # Stop any current movement
             self.villager.direction.x = 0
             self.villager.direction.y = 0
-            
-    def run(self):
+
+    def action_chop_wood(self):
 
         if self.villager is None:
             self.pick_a_villager()
 
         if self.tree not in current_game_state.board.tree_sprites:
             self.pick_closest_tree()  # Use closest tree selection after picking villager
-            
+
         # villager should return home if at max capacity
         if self.villager.should_drop_wood():
-            self.villager.walk_to_home_drop_wood()
+            self.villager.walk_home_to_drop_wood()
 
             if self.villager.is_at_home():
                 self.villager.drop_wood()
             return
-        
+
         # Walk villager to tree if we have both
         if self.villager and self.tree:
 
@@ -84,6 +84,11 @@ class Agent():
             else:
                 self.villager.chopping_wood(self.tree)
 
+
+    def run(self):
+
+        self.action_chop_wood()
+        
         # # villager should return home if at max capacity
         # if self.villager.should_drop_food():
         #     self.villager.walk_to_home()

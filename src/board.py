@@ -11,11 +11,9 @@ from src.objects import Tree, BerryBush
 from src.villager.villager import Villager
 from src.scout import Scout
 from src.game_state import current_game_state
-from agent import rl_agent
+# from agent import rl_agent
 
 from src.utils import bottom_panel
-
-from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
 
 from src.config import get as get_config
 from src.map_loader import load_map
@@ -40,12 +38,12 @@ class Board:
         self.last_cell_change = 0
         self.discovered_trees = []
         self.grid_sprites = {}
-        self.create_map()
-        # self.add_scout()
+        self.render_map()
+        
         self.add_villager()
 
         current_game_state.board = self
-
+        
     def add_villager(self):
 
         # Use Villager.spawn_position to determine spawn location
@@ -84,7 +82,7 @@ class Board:
                     # Add more villagers if we have more cells
                     Villager((center_x, center_y), (self.villager_sprites,), start_cell=cell_id)
 
-    def create_map(self):
+    def render_map(self):
         world_map = self.world_map
         if world_map and len(world_map) > 0 and len(world_map[0]) > 0:
             rows = len(world_map)
@@ -180,7 +178,7 @@ class Board:
         self.villager_sprites.update()
         self.scout_sprites.update()
 
-        rl_agent.run()
+        # rl_agent.run()
 
         # Reveal fog for scouts
         for scout in self.scout_sprites:

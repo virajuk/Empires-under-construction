@@ -4,7 +4,6 @@ from src.game_state import current_game_state
 from src.config import get as get_config
 from src.villager.wood_villager import WoodVillager
 
-
 class Villager(pygame.sprite.Sprite, WoodVillager):
 
     def __init__(self, pos, groups, start_cell=None):
@@ -19,7 +18,6 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
         self.health = 100
         self.speed = 2
 
-        self.ai_mode = get_config('AI_MODE', True)
         self.is_moving = False
         self.ai_next_change = 0
         self.ai_move_duration = 0
@@ -109,68 +107,6 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 cell_id, (center_x, center_y) = random.choice(cell_labels)
                 return (center_x, center_y), cell_id
             return None, None
-        
-    def manual_control(self):
-        
-        move_x, move_y = 0, 0
-        if self.keys[pygame.K_w]:
-            move_y = -1
-            self.current_direction = 'up'
-        elif self.keys[pygame.K_s]:
-            move_y = 1
-            self.current_direction = 'down'
-        if self.keys[pygame.K_a]:
-            move_x = -1
-            self.current_direction = 'left'
-        elif self.keys[pygame.K_d]:
-            move_x = 1
-            self.current_direction = 'right'
-        self.direction.x, self.direction.y = move_x, move_y
-
-        # Drop wood with 'g' key (only once per press)
-        if self.keys[pygame.K_g]:
-            if not hasattr(self, '_drop_toggle_last') or not self._drop_toggle_last:
-                self.drop_wood()
-            self._drop_toggle_last = True
-        else:
-            self._drop_toggle_last = False
-
-        # Chop wood with 'c' key (only once per press)
-        if self.keys[pygame.K_c]:
-            if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
-                # Only allow chopping if adjacent to a tree
-                if self.can_chop_tree():
-                    self.chopping = not self.chopping
-            self._chop_toggle_last = True
-        else:
-            self._chop_toggle_last = False
-
-    def ai_control(self, now):
-
-        move_x, move_y = 0, 0
-        if now > self.ai_next_change:
-            direction = random.choices(
-                self.ai_directions,
-                weights=[3, 3, 3, 3, 1], k=1
-            )[0]
-            if direction == 'up':
-                move_y = -1
-                self.current_direction = 'up'
-            elif direction == 'down':
-                move_y = 1
-                self.current_direction = 'down'
-            elif direction == 'left':
-                move_x = -1
-                self.current_direction = 'left'
-            elif direction == 'right':
-                move_x = 1
-                self.current_direction = 'right'
-            else:
-                move_x, move_y = 0, 0
-            self.direction.x, self.direction.y = move_x, move_y
-        
-            self.ai_move_duration = random.randint(500, 2000)
-            self.ai_next_change = now + self.ai_move_duration
 
     def is_at_home(self):
 
@@ -194,15 +130,6 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
     def update(self):
         
-        now = pygame.time.get_ticks()
-        self.keys = pygame.key.get_pressed()
-
-        # Check if manual control is enabled (AI_MODE is False)
-        if not get_config('AI_MODE', True):
-            self.manual_control()
-        else:
-            self.ai_control(now)
-
         self.reach_maximum_resource_carrying_limit()
         
         self.prev_rect = self.rect.copy()
@@ -211,6 +138,7 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
         if self.direction.magnitude() > 0:
             self.direction = self.direction.normalize()
+
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
 
@@ -237,3 +165,34 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 self.last_move_direction = self.current_direction
             elif current_frames:
                 self.image = current_frames[0]
+
+class Settler(pygame.sprite.Sprite):
+
+    def __init__(self, *groups):
+        super().__init__(*groups)
+
+        self.frame_index = 0
+        self.animation_speed = 0.15
+        self.current_direction = 'down'
+        self.load_walk_frames()
+    
+    def load_walk_frames(self):
+
+        sprite_sheet = pygame.image.load('graphics/villager/walk.png').convert_alpha()
+        sheet_width, sheet_height = sprite_sheet.get_size()
+        rows, cols = 4, 9
+        frame_width = sheet_width // cols
+        frame_height = sheet_height // rows
+        directions = ['up', 'left', 'down', 'right']
+        self.frames = {d: [] for d in directions}
+        for i, direction in enumerate(directions):
+            for c in range(cols):
+                rect = pygame.Rect(c * frame_width, i * frame_height, frame_width, frame_height)
+                frame = sprite_sheet.subsurface(rect).copy()
+                frame = pygame.transform.scale(frame, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
+                if frame.get_flags() & pygame.SRCALPHA:
+                    frame = frame.convert_alpha()
+                else:
+                    bg = frame.get_at((0, 0))[:3]
+                    frame.set_colorkey(bg)
+                self.frames[direction].append(frame)
