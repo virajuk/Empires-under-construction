@@ -3,6 +3,7 @@ import pygame
 
 from src.game_state import current_game_state
 from src.objects import Tree
+from src.villager.villager import WoodVillager
 
 class Agent():
 
@@ -15,6 +16,7 @@ class Agent():
         self.agent_control = True  # Flag to indicate agent is controlling villager
 
     def pick_closest_tree(self):
+
         """Pick the closest tree to the selected villager"""
         if self.villager is None:
             self.tree = None
@@ -65,6 +67,9 @@ class Agent():
         if self.villager is None:
             self.pick_a_villager()
 
+            self.villager.__class__ = WoodVillager
+            self.villager.init_as_wood_villager()
+            
         if self.tree not in current_game_state.board.tree_sprites:
             self.pick_closest_tree()  # Use closest tree selection after picking villager
 
@@ -88,7 +93,7 @@ class Agent():
     def run(self):
 
         self.action_chop_wood()
-        
+
         # # villager should return home if at max capacity
         # if self.villager.should_drop_food():
         #     self.villager.walk_to_home()

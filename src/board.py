@@ -177,9 +177,7 @@ class Board:
         # Update animation and movement
         self.villager_sprites.update()
         self.scout_sprites.update()
-
-        # rl_agent.run()
-
+        
         # Reveal fog for scouts
         for scout in self.scout_sprites:
             self.reveal_cell(scout.rect.centerx, scout.rect.centery)
