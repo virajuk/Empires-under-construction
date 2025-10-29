@@ -14,8 +14,21 @@ class WoodVillager():
         
         self.load_chopping_frames()
 
-    def can_drop_wood(self):
+    def __villager_adjacent_positions(self):
 
+        """Check if villager is adjacent to a home tile to allow wood drop."""
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
+        adjacent_positions = [
+            (villager_row - 1, villager_col),  # up
+            (villager_row + 1, villager_col),  # down
+            (villager_row, villager_col - 1),  # left
+            (villager_row, villager_col + 1),  # right
+        ]
+        return adjacent_positions
+
+    def can_drop_wood(self):
+        
         """Check if villager is adjacent to a home tile to allow wood drop."""
         villager_col = self.rect.centerx // current_game_state.TILE_SIZE
         villager_row = self.rect.centery // current_game_state.TILE_SIZE
@@ -86,6 +99,7 @@ class WoodVillager():
         return False
 
     def is_at_tree(self, tree):
+
         """Check if villager is adjacent to the tree (can chop)"""
         if self is None or tree is None:
             return False
@@ -101,22 +115,8 @@ class WoodVillager():
         tile_size = current_game_state.TILE_SIZE
         return dx <= tile_size and dy <= tile_size
 
-    def find_home_position(self):
-        """Find the position of the home tile"""
-        world_map = current_game_state.WORLD_MAP
-        if not world_map:
-            return None
-            
-        for row_idx, row in enumerate(world_map):
-            for col_idx, tile in enumerate(row):
-                if tile == 'home':
-                    # Return center position of home tile
-                    x = col_idx * current_game_state.TILE_SIZE + current_game_state.TILE_SIZE // 2
-                    y = row_idx * current_game_state.TILE_SIZE + current_game_state.TILE_SIZE // 2
-                    return (x, y)
-        return None
-
     def walk_to_tree(self, tree):
+
         """Walk the villager to the selected tree"""
         if self is None or tree is None:
             return False
@@ -166,25 +166,24 @@ class WoodVillager():
             elif move_y < 0:
                 self.current_direction = 'up'
 
-            # Let the villager's normal update cycle handle movement at consistent speed
-            # (Movement will be applied in villager.update() using normalized direction * speed)
-                
             return True
         
         # Already at tree (adjacent or same position)
         return False
 
     def should_drop_wood(self):
+
         """Check if villager should drop wood (at max capacity)"""
         return self.wood_carried >= self.max_wood_capacity
 
-    def walk_to_home_drop_wood(self):
+    def walk_home_to_drop_wood(self):
+        
         """Walk villager towards an adjacent position to the home tile"""
         # Check if already adjacent to home
         if self.can_drop_wood():
             return False  # Already at home
-            
-        # # Find home tile position
+        
+        # Find home tile position
         world_map = current_game_state.WORLD_MAP
         if not world_map:
             return False
@@ -289,18 +288,15 @@ class WoodVillager():
         # No valid movement found (blocked by obstacles)
         return False
 
-    # def is_at_home(self):
-    #     """Check if villager is adjacent to home (can drop wood)"""
-    #     return self.can_drop_wood()
-
     def get_tree_direction(self):
+        
         """Get the direction towards the nearest adjacent tree for animations"""
         # Get villager's grid position
         villager_col = self.rect.centerx // current_game_state.TILE_SIZE
         villager_row = self.rect.centery // current_game_state.TILE_SIZE
         
         # Check adjacent tiles with their directions
-        adjacent_checks = [
+        adjacent_positions = [
             (villager_row - 1, villager_col, 'up'),    # up
             (villager_row + 1, villager_col, 'down'),  # down
             (villager_row, villager_col - 1, 'left'),  # left
@@ -311,7 +307,7 @@ class WoodVillager():
         if not world_map:
             return self.last_move_direction
         
-        for row, col, direction in adjacent_checks:
+        for row, col, direction in adjacent_positions:
             # Check bounds
             if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
                 if world_map[row][col] == 'tree':

@@ -2,14 +2,12 @@ import pygame
 import random
 from src.game_state import current_game_state
 from src.config import get as get_config
-from src.villager.wood_villager import WoodVillager
+# from src.villager.wood_villager import WoodVillager
 
-
-class Villager(pygame.sprite.Sprite, WoodVillager):
+class Villager(pygame.sprite.Sprite):
 
     def __init__(self, pos, groups, start_cell=None):
         pygame.sprite.Sprite.__init__(self, groups)
-        WoodVillager.__init__(self)
 
         self.frame_index = 0
         self.animation_speed = 0.15
@@ -19,7 +17,6 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
         self.health = 100
         self.speed = 2
 
-        self.ai_mode = get_config('AI_MODE', True)
         self.is_moving = False
         self.ai_next_change = 0
         self.ai_move_duration = 0
@@ -73,11 +70,6 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                     frame.set_colorkey(bg)
                 self.frames[direction].append(frame)
     
-    def reach_maximum_resource_carrying_limit(self):
-
-        if self.max_wood_capacity <= self.wood_carried:
-            self.chopping = False
-    
     @staticmethod
     def spawn_position(cell_labels):
 
@@ -109,84 +101,27 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 cell_id, (center_x, center_y) = random.choice(cell_labels)
                 return (center_x, center_y), cell_id
             return None, None
-        
-    def manual_control(self):
-        
-        move_x, move_y = 0, 0
-        if self.keys[pygame.K_w]:
-            move_y = -1
-            self.current_direction = 'up'
-        elif self.keys[pygame.K_s]:
-            move_y = 1
-            self.current_direction = 'down'
-        if self.keys[pygame.K_a]:
-            move_x = -1
-            self.current_direction = 'left'
-        elif self.keys[pygame.K_d]:
-            move_x = 1
-            self.current_direction = 'right'
-        self.direction.x, self.direction.y = move_x, move_y
 
-        # Drop wood with 'g' key (only once per press)
-        if self.keys[pygame.K_g]:
-            if not hasattr(self, '_drop_toggle_last') or not self._drop_toggle_last:
-                self.drop_wood()
-            self._drop_toggle_last = True
-        else:
-            self._drop_toggle_last = False
+    def _villager_adjacent_positions(self):
 
-        # Chop wood with 'c' key (only once per press)
-        if self.keys[pygame.K_c]:
-            if not hasattr(self, '_chop_toggle_last') or not self._chop_toggle_last:
-                # Only allow chopping if adjacent to a tree
-                if self.can_chop_tree():
-                    self.chopping = not self.chopping
-            self._chop_toggle_last = True
-        else:
-            self._chop_toggle_last = False
-
-    def ai_control(self, now):
-
-        move_x, move_y = 0, 0
-        if now > self.ai_next_change:
-            direction = random.choices(
-                self.ai_directions,
-                weights=[3, 3, 3, 3, 1], k=1
-            )[0]
-            if direction == 'up':
-                move_y = -1
-                self.current_direction = 'up'
-            elif direction == 'down':
-                move_y = 1
-                self.current_direction = 'down'
-            elif direction == 'left':
-                move_x = -1
-                self.current_direction = 'left'
-            elif direction == 'right':
-                move_x = 1
-                self.current_direction = 'right'
-            else:
-                move_x, move_y = 0, 0
-            self.direction.x, self.direction.y = move_x, move_y
-        
-            self.ai_move_duration = random.randint(500, 2000)
-            self.ai_next_change = now + self.ai_move_duration
-
-    def is_at_home(self):
-
-        """Check if villager is at home tile."""
+        """Check if villager is adjacent to a home tile to allow wood drop."""
         villager_col = self.rect.centerx // current_game_state.TILE_SIZE
         villager_row = self.rect.centery // current_game_state.TILE_SIZE
         adjacent_positions = [
-            (villager_row - 1, villager_col),  # up
-            (villager_row + 1, villager_col),  # down
-            (villager_row, villager_col - 1),  # left
-            (villager_row, villager_col + 1),  # right
+            (villager_row - 1, villager_col, 'up'),    # up
+            (villager_row + 1, villager_col, 'down'),  # down
+            (villager_row, villager_col - 1, 'left'),  # left
+            (villager_row, villager_col + 1, 'right'), # right
         ]
+        return adjacent_positions
+
+    def is_at_home(self):
+
+        adjacent_positions = self._villager_adjacent_positions()
 
         home_tile_pos = current_game_state.home_cell
 
-        for row, col in adjacent_positions:
+        for row, col, _ in adjacent_positions:
             if (row, col) == home_tile_pos:
                 return True
         
@@ -194,37 +129,352 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
 
     def update(self):
         
-        now = pygame.time.get_ticks()
-        self.keys = pygame.key.get_pressed()
-
-        # Check if manual control is enabled (AI_MODE is False)
-        if not get_config('AI_MODE', True):
-            self.manual_control()
-        else:
-            self.ai_control(now)
-
-        self.reach_maximum_resource_carrying_limit()
-        
         self.prev_rect = self.rect.copy()
         
         self.is_moving = self.direction.magnitude() > 0
 
         if self.direction.magnitude() > 0:
             self.direction = self.direction.normalize()
+
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
 
         # Keep within screen bounds
         if self.rect.left < 0 or self.rect.right > current_game_state.WIDTH or self.rect.top < 0 or self.rect.bottom > current_game_state.HEIGHT:
             self.rect.clamp_ip(pygame.Rect(0, 0, current_game_state.WIDTH, current_game_state.HEIGHT))
+        
+class WoodVillager(Villager):
+    
+    def init_as_wood_villager(self):
 
-        # If villager is chopping, override movement and play chopping animation
+        self.wood_carried = 0
+        self.max_wood_capacity = 10
+        self.using_axe = False
+        self.chopping = False
+        self.last_chop_time = 0
+        self.returning_home = False  # Flag to indicate returning home
+
+        self.load_chopping_frames()
+
+    def can_drop_wood(self):
+
+        adjacent_positions = self._villager_adjacent_positions()
+        world_map = current_game_state.WORLD_MAP
+        if not world_map:
+            return False
+        for row, col, _ in adjacent_positions:
+            if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
+                if world_map[row][col] == 'home':
+                    return True
+        return False
+
+    def drop_wood(self):
+
+        """Drop all carried wood if adjacent to home tile. Returns amount dropped and adds to game state."""
+        if self.wood_carried > 0 and self.can_drop_wood():
+            dropped = self.wood_carried
+            self.wood_carried = 0
+            current_game_state.add_wood(dropped)
+            current_game_state.update_score(dropped*1.2)
+            return dropped
+        return 0
+
+    def gather_wood_from_tree(self, tree):
+
+        """Gather wood when chopping"""
+        wood_gathered = min(1, self.max_wood_capacity - self.wood_carried)
+        if wood_gathered > 0:
+            tree.reduce_wood(wood_gathered)
+            self.wood_carried += wood_gathered
+            
+            # Check if at max capacity and should return home
+            if self.wood_carried >= self.max_wood_capacity:
+                self.chopping = False  # Stop chopping
+                self.returning_home = True  # Start returning home
+                
+        return True
+
+    def can_chop_tree(self):
+
+        adjacent_positions = self._villager_adjacent_positions()
+        world_map = current_game_state.WORLD_MAP
+        if not world_map:
+            return False
+            
+        for row, col, _ in adjacent_positions:
+            # Check bounds
+            if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
+                if world_map[row][col] == 'tree':
+                    return True
+        return False
+
+    def is_at_tree(self, tree):
+
+        """Check if villager is adjacent to the tree (can chop)"""
+        if self is None or tree is None:
+            return False
+        
+        villager_pos = self.rect.center
+        tree_pos = tree.rect.center
+        
+        # Calculate distance
+        dx = abs(villager_pos[0] - tree_pos[0])
+        dy = abs(villager_pos[1] - tree_pos[1])
+        
+        # Check if adjacent (within one tile distance)
+        tile_size = current_game_state.TILE_SIZE
+        return dx <= tile_size and dy <= tile_size
+
+    def walk_to_tree(self, tree):
+
+        """Walk the villager to the selected tree"""
+        if self is None or tree is None:
+            return False
+
+        villager_pos = self.rect.center
+        tree_pos = tree.rect.center
+
+        # Calculate direction to tree
+        dx = tree_pos[0] - villager_pos[0]
+        dy = tree_pos[1] - villager_pos[1]
+        
+        # Determine movement direction (one step at a time)
+        move_x = 0
+        move_y = 0
+        
+        # Prioritize larger distance first
+        if abs(dx) > abs(dy):
+            if dx > 0:
+                move_x = 1  # Move right
+            elif dx < 0:
+                move_x = -1  # Move left
+        else:
+            if dy > 0:
+                move_y = 1  # Move down
+            elif dy < 0:
+                move_y = -1  # Move up
+        
+        # Apply movement to villager
+        if move_x != 0 or move_y != 0:
+            # Disable AI mode to allow agent control
+            self.ai_mode = False
+            
+            # Mark villager as under agent control
+            self.agent_controlled = True
+            
+            # Set villager direction and movement (same as walk_to_home)
+            self.direction.x = move_x
+            self.direction.y = move_y
+            
+            # Update current direction for animation
+            if move_x > 0:
+                self.current_direction = 'right'
+            elif move_x < 0:
+                self.current_direction = 'left'
+            elif move_y > 0:
+                self.current_direction = 'down'
+            elif move_y < 0:
+                self.current_direction = 'up'
+
+            return True
+        
+        # Already at tree (adjacent or same position)
+        return False
+
+    def should_drop_wood(self):
+
+        """Check if villager should drop wood (at max capacity)"""
+        return self.wood_carried >= self.max_wood_capacity
+
+    def walk_home_to_drop_wood(self):
+        
+        """Walk villager towards an adjacent position to the home tile"""
+        # Check if already adjacent to home
+        if self.can_drop_wood():
+            return False  # Already at home
+        
+        # Find home tile position
+        world_map = current_game_state.WORLD_MAP
+        if not world_map:
+            return False
+        
+        home_tile_pos = current_game_state.home_cell
+
+        if not home_tile_pos:
+            return False
+        
+        home_row, home_col = home_tile_pos
+        villager_col = self.rect.centerx // current_game_state.TILE_SIZE
+        villager_row = self.rect.centery // current_game_state.TILE_SIZE
+        
+        # Find the best adjacent position to home
+        adjacent_positions = [
+            (home_row - 1, home_col, 'up'),    # north of home
+            (home_row + 1, home_col, 'down'),  # south of home
+            (home_row, home_col - 1, 'left'),  # west of home
+            (home_row, home_col + 1, 'right'), # east of home
+        ]
+        
+        # Choose the closest valid adjacent position
+        best_target = None
+        min_distance = float('inf')
+        
+        for target_row, target_col, direction in adjacent_positions:
+            # Check if position is valid (within bounds and not an obstacle)
+            if (0 <= target_row < len(world_map) and 
+                0 <= target_col < len(world_map[0]) and
+                world_map[target_row][target_col] != 'tree'):  # Avoid tree obstacles
+                
+                # Calculate Manhattan distance
+                distance = abs(villager_row - target_row) + abs(villager_col - target_col)
+                if distance < min_distance:
+                    min_distance = distance
+                    best_target = (target_row, target_col)
+        
+        if not best_target:
+            return False
+        
+        target_row, target_col = best_target
+        
+        # Move towards the best adjacent position with obstacle avoidance
+        move_x = 0
+        move_y = 0
+        
+        # Determine movement direction (one step at a time)
+        dx = target_col - villager_col
+        dy = target_row - villager_row
+        
+        # Try primary movement directions with obstacle checking
+        possible_moves = []
+        
+        # Prioritize larger distance first
+        if abs(dx) > abs(dy):
+            # Primary: horizontal movement
+            if dx > 0:
+                possible_moves.append((1, 0, 'right'))  # Move right
+            elif dx < 0:
+                possible_moves.append((-1, 0, 'left'))  # Move left
+            # Secondary: vertical movement
+            if dy > 0:
+                possible_moves.append((0, 1, 'down'))  # Move down
+            elif dy < 0:
+                possible_moves.append((0, -1, 'up'))  # Move up
+        else:
+            # Primary: vertical movement
+            if dy > 0:
+                possible_moves.append((0, 1, 'down'))  # Move down
+            elif dy < 0:
+                possible_moves.append((0, -1, 'up'))  # Move up
+            # Secondary: horizontal movement
+            if dx > 0:
+                possible_moves.append((1, 0, 'right'))  # Move right
+            elif dx < 0:
+                possible_moves.append((-1, 0, 'left'))  # Move left
+        
+        # Try each movement option, avoiding obstacles
+        for test_move_x, test_move_y, direction in possible_moves:
+            next_col = villager_col + test_move_x
+            next_row = villager_row + test_move_y
+            
+            # Check if next position is within bounds
+            if (0 <= next_row < len(world_map) and 
+                0 <= next_col < len(world_map[0])):
+                
+                # Check if next position is not an obstacle
+                next_tile = world_map[next_row][next_col]
+                if next_tile not in ['tree']:  # Add other obstacles here as needed
+                    # Valid move found
+                    move_x = test_move_x
+                    move_y = test_move_y
+                    self.current_direction = direction
+                    break
+        
+        # Apply movement if a valid direction was found
+        if move_x != 0 or move_y != 0:
+            self.direction.x = move_x
+            self.direction.y = move_y
+            return True
+        
+        # No valid movement found (blocked by obstacles)
+        return False
+
+    def get_tree_direction(self):
+        
+        adjacent_positions = self._villager_adjacent_positions()
+
+        world_map = current_game_state.WORLD_MAP
+        if not world_map:
+            return self.last_move_direction
+        
+        for row, col, direction in adjacent_positions:
+            # Check bounds
+            if 0 <= row < len(world_map) and 0 <= col < len(world_map[0]):
+                if world_map[row][col] == 'tree':
+                    return direction
+        
+        # Fallback to last move direction if no tree found
+        return self.last_move_direction
+        
+    def chopping_wood(self, tree):
+        
+        now = pygame.time.get_ticks()
+        self.chopping = True
+        self.chopping_woods_animation()
+        
+        # Damage adjacent trees every second
+        if now - self.last_chop_time >= 1000:  # 1000ms = 1 second
+            if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'tree_sprites'):
+                tree_found = self.gather_wood_from_tree(tree)
+                if not tree_found:
+                    # No trees left to chop, stop chopping
+                    self.chopping = False
+            self.last_chop_time = now
+
+    def chopping_woods_animation(self):
+
+        # Render chopping animation towards the tree tile
+        direction = self.get_tree_direction()
+        current_frames = self.chop_frames.get(direction, [])
+        self.frame_index += self.animation_speed
+        if self.frame_index >= len(current_frames):
+            self.frame_index = 0
+        if current_frames:
+            self.image = current_frames[int(self.frame_index)]
+
+    def load_chopping_frames(self):
+
+        try:
+            sprite_sheet = pygame.image.load('graphics/villager/chopping_wood.png').convert_alpha()
+            sheet_width, sheet_height = sprite_sheet.get_size()
+            rows, cols = 4, 6
+            frame_width = sheet_width // cols
+            frame_height = sheet_height // rows
+            directions = ['up', 'left', 'down', 'right']
+            self.chop_frames = {d: [] for d in directions}
+            for i, direction in enumerate(directions):
+                for c in range(cols):
+                    cx = c * frame_width + frame_width // 2
+                    cy = i * frame_height + frame_height // 2
+                    crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
+                    frame = sprite_sheet.subsurface(crop_rect).copy()
+                    frame = pygame.transform.scale(frame, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
+                    if frame.get_flags() & pygame.SRCALPHA:
+                        frame = frame.convert_alpha()
+                    else:
+                        bg = frame.get_at((0, 0))[:3]
+                        frame.set_colorkey(bg)
+                    self.chop_frames[direction].append(frame)
+        except Exception:
+            self.chop_frames = {d: [] for d in ['up', 'left', 'down', 'right']}
+
+    def update(self):
+
+        super().update()
+
         if self.chopping:
 
             self.direction.x, self.direction.y = 0, 0
             self.current_direction = self.last_move_direction
-    
-            # self.chopping_wood(now)
 
         else:
             # Walking animation
@@ -237,3 +487,41 @@ class Villager(pygame.sprite.Sprite, WoodVillager):
                 self.last_move_direction = self.current_direction
             elif current_frames:
                 self.image = current_frames[0]
+
+class FoodVillager(Villager):
+    
+    def init_as_food_villager(self):
+
+        self.food_carried = 0
+        self.max_food_capacity = 10
+        self.gathering = False
+        self.last_gather_time = 0
+        self.returning_home = False  # Flag to indicate returning home
+
+        self.load_gathering_frames()
+
+    def load_gathering_frames(self):
+
+        try:
+            sprite_sheet = pygame.image.load('graphics/villager/food_picking.png').convert_alpha()
+            sheet_width, sheet_height = sprite_sheet.get_size()
+            rows, cols = 4, 6
+            frame_width = sheet_width // cols
+            frame_height = sheet_height // rows
+            directions = ['up', 'left', 'down', 'right']
+            self.gather_frames = {d: [] for d in directions}
+            for i, direction in enumerate(directions):
+                for c in range(cols):
+                    cx = c * frame_width + frame_width // 2
+                    cy = i * frame_height + frame_height // 2
+                    crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
+                    frame = sprite_sheet.subsurface(crop_rect).copy()
+                    frame = pygame.transform.scale(frame, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
+                    if frame.get_flags() & pygame.SRCALPHA:
+                        frame = frame.convert_alpha()
+                    else:
+                        bg = frame.get_at((0, 0))[:3]
+                        frame.set_colorkey(bg)
+                    self.gather_frames[direction].append(frame)
+        except Exception:
+            self.gather_frames = {d: [] for d in ['up', 'left', 'down', 'right']}

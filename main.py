@@ -5,6 +5,7 @@ from src.config import get as get_config
 from src import current_game_state
 from src.map_loader import load_map
 from src import utils
+from agent import rl_agent
 
 class Game:
 
@@ -30,7 +31,7 @@ class Game:
         panel_height = get_config('PANEL_HEIGHT', 48)
         screen_height = current_game_state.HEIGHT + panel_height
         self.screen = pygame.display.set_mode((current_game_state.WIDTH, screen_height))
-        pygame.display.set_caption(f"EMPIRES [Under Construction]")
+        pygame.display.set_caption(f"EMPIRES --Under Construction--")
         self.clock = pygame.time.Clock()
         self.board = Board()
 
@@ -53,6 +54,7 @@ class Game:
                 pygame.quit()
                 sys.exit()
             self.board.run()
+            rl_agent.run()
             pygame.display.update()
             self.clock.tick(get_config('FPS', 60))
 

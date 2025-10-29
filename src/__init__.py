@@ -7,3 +7,7 @@ from src.objects import Tree
 from src.game_state import current_game_state
 
 __all__ = ['Board', 'Villager', 'Scout', 'AnimatedPlayer', 'GreenGrass', 'Tree', 'Sand', 'Water', 'Grid', 'Home', 'current_game_state']
+
+from src.test.settler import Settler, WoodSettler
+
+__all__ = ['Settler', 'WoodSettler']

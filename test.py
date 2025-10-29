@@ -1,57 +1,27 @@
-# import random
-#
-# lst = ['GreenGrass', 'Sand']
-# result = random.choices(lst, weights=[2, 1], k=1)
-# print(result)
+from src import Settler, WoodSettler
 
-import pygame
-# from glob import glob
-#
-# files = glob('graphics/grass/*.png')
-# print(files)
-# # result = pygame.image.load(glob('graphics/grass/*.png'))
-# # print(result)
+if __name__ == '__main__':
 
-# import itertools
-# import string
-#
-# a = string.ascii_lowercase
-# print(a)
-#
-# com = itertools.product(a, a)
-# # print(next(com))
-#
-# str = "".join(next(com))
-# print(str)
+    settler = Settler("Pioneer")
+    print(f"Created settler with name: {settler.name} {(settler.__class__.__name__)}")
 
-from vendor.perlin2d import generate_perlin_noise_2d, generate_fractal_noise_2d
+    settler.wear_clothes()
+    print(f"{settler.name} wears {settler.clothes}")
 
-# shape = (12, 12)
-# res = (4, 4)
-# tileable = (True, True)
+    settler.locate()
+    print(f"{settler.name} is at {settler.coordinates}")
 
-# result = generate_perlin_noise_2d(shape, res)
-# print(result)
+    # Dynamically reassign class
+    settler.__class__ = WoodSettler
+    print(f"Settler is now a wood settler with name: {settler.name} {(settler.__class__.__name__)}")
+    settler.init_as_wood_settler()
+    print(f"Wood carried initially : {settler.wood_carried}")
 
-# noise = generate_fractal_noise_2d((1280, 960), (8, 6), 5)
-# print(noise)
+    settler.wear_clothes()
+    print(f"{settler.name} wears {settler.clothes}")
 
-import numpy as np
+    settler.bear_tools()
+    print(f"{settler.name} carries tools : {settler.tools} and is at {settler.coordinates}")
 
-# Create a sample 2D array
-data = np.array([[-0.3, -0.4, 0.69, 0.47],
-                 [0.8, 0.2, -0.3, 0.8],
-                 [0.45, -0.23, 0.14, -0.28]])
-
-# Define the value you want to find
-lower_bound = 0.4
-higher_bound = 0.5
-
-combined_condition = np.logical_and(data >= lower_bound, data <= higher_bound)
-
-# Find the indexes where the value equals the target_value
-indices = np.where(combined_condition)
-
-# Print the found indexes
-print("Indices:", indices)
-# print("Column Indices:", col_indices)
+    settler.__class__ = Settler
+    print(f"Wood settler with name : {settler.name} no longer limited to wood chopping {(settler.__class__.__name__)}")
