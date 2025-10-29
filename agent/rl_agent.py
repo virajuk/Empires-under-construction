@@ -12,6 +12,7 @@ class Agent():
         # self.game_state = current_game_state
         self.action_cooldown = 500  # milliseconds
         self.tree = None
+        self.berry_bush = None
         self.villager = None
         self.agent_control = True  # Flag to indicate agent is controlling villager
 
@@ -89,17 +90,47 @@ class Agent():
             else:
                 self.villager.chopping_wood(self.tree)
 
+    def pick_closest_berry_bush(self):
+
+        """Pick the closest berry bush to the selected villager"""
+        if self.villager is None:
+            self.berry_bush = None
+            return
+            
+        berry_bushes = list(current_game_state.board.berry_bush_sprites)
+        if not berry_bushes:
+            self.berry_bush = None
+            return
+            
+        villager_pos = self.villager.rect.center
+        closest_berry_bush = None
+        min_distance = float('inf')
+
+        for berry_bush in berry_bushes:
+            berry_bush_pos = berry_bush.rect.center
+            # Calculate Manhattan distance (simpler than Euclidean for grid-based movement)
+            distance = abs(villager_pos[0] - berry_bush_pos[0]) + abs(villager_pos[1] - berry_bush_pos[1])
+
+            if distance < min_distance:
+                min_distance = distance
+                closest_berry_bush = berry_bush
+
+        self.berry_bush = closest_berry_bush
+
+    def action_gather_food(self):
+        
+        if self.villager is None:
+            self.pick_a_villager()
+
+            self.villager.__class__ = WoodVillager
+            self.villager.init_as_wood_villager()
+
+        if self.berry_bush not in current_game_state.board.berry_bush_sprites:
+            self.pick_closest_berry_bush()
 
     def run(self):
-
-        self.action_chop_wood()
-
-        # # villager should return home if at max capacity
-        # if self.villager.should_drop_food():
-        #     self.villager.walk_to_home()
-
-        #     if self.villager.is_at_home():
-        #         self.villager.drop_food()
-        #     return
         
+        self.action_chop_wood()
+        # self.action_gather_food()
+
 rl_agent = Agent()

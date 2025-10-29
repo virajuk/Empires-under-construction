@@ -32,7 +32,19 @@ def bottom_panel(display_surface):
 
     resource_text = font.render(f"Wood: {current_game_state.wood}", True, (255, 255, 255))
     display_surface.blit(resource_text, (128, current_game_state.HEIGHT + 8))
+
+    resource_text = font.render(f"Food: {current_game_state.food}", True, (255, 255, 255))
+    display_surface.blit(resource_text, (240, current_game_state.HEIGHT + 8))
     
+    go_for_a_berry_bush(display_surface)
+
+    # Show villager food carrying info
+    if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'villager_sprites'):
+        for idx, villager in enumerate(current_game_state.board.villager_sprites):
+            if hasattr(villager, 'food_carried') and villager.food_carried > 0:
+                villager_food_text = font.render(f"{villager.name} carrying Food: {villager.food_carried}/{villager.max_food_capacity}", True, (255, 255, 255))
+                display_surface.blit(villager_food_text, (16, current_game_state.HEIGHT + 48))
+
     go_for_a_tree(display_surface)
 
     # Show villager wood carrying info
@@ -40,21 +52,27 @@ def bottom_panel(display_surface):
         for idx, villager in enumerate(current_game_state.board.villager_sprites):
             if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
                 villager_wood_text = font.render(f"{villager.name} carrying Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
-                display_surface.blit(villager_wood_text, (280 + idx * 200, current_game_state.HEIGHT + 8))
-        
+                display_surface.blit(villager_wood_text, (16, current_game_state.HEIGHT + 48))
+
 def go_for_a_tree(display_surface):
 
     font = get_font(32)
     if rl_agent.tree is not None:
         agent_text_string = f"Agent Target Tree: {rl_agent.tree.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
-    else:
-        agent_text_string = f"Agent Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
-    agent_text = font.render(agent_text_string, True, (255, 255, 255))
-    display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 48))
+        agent_text = font.render(agent_text_string, True, (255, 255, 255))
+        display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 90))
 
     # path = shortest_path(agent.villager.rect.center, agent.tree.rect.center, current_game_state.HEIGHT, current_game_state.WIDTH)
     # path_text = font.render(f"Path: {path}", True, (255, 255, 255))
     # display_surface.blit(path_text, (360, current_game_state.HEIGHT + 48))
+
+def go_for_a_berry_bush(display_surface):
+
+    font = get_font(32)
+    if rl_agent.berry_bush is not None:
+        agent_text_string = f"Agent Target Berry Bush: {rl_agent.berry_bush.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
+        agent_text = font.render(agent_text_string, True, (255, 255, 255))
+        display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 90))
 
 def get_tree_center_from_id(tree_id, tile_size):
 

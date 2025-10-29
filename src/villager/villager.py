@@ -442,6 +442,7 @@ class WoodVillager(Villager):
             self.image = current_frames[int(self.frame_index)]
 
     def load_chopping_frames(self):
+
         try:
             sprite_sheet = pygame.image.load('graphics/villager/chopping_wood.png').convert_alpha()
             sheet_width, sheet_height = sprite_sheet.get_size()
@@ -486,3 +487,41 @@ class WoodVillager(Villager):
                 self.last_move_direction = self.current_direction
             elif current_frames:
                 self.image = current_frames[0]
+
+class FoodVillager(Villager):
+    
+    def init_as_food_villager(self):
+
+        self.food_carried = 0
+        self.max_food_capacity = 10
+        self.gathering = False
+        self.last_gather_time = 0
+        self.returning_home = False  # Flag to indicate returning home
+
+        self.load_gathering_frames()
+
+    def load_gathering_frames(self):
+
+        try:
+            sprite_sheet = pygame.image.load('graphics/villager/food_picking.png').convert_alpha()
+            sheet_width, sheet_height = sprite_sheet.get_size()
+            rows, cols = 4, 6
+            frame_width = sheet_width // cols
+            frame_height = sheet_height // rows
+            directions = ['up', 'left', 'down', 'right']
+            self.gather_frames = {d: [] for d in directions}
+            for i, direction in enumerate(directions):
+                for c in range(cols):
+                    cx = c * frame_width + frame_width // 2
+                    cy = i * frame_height + frame_height // 2
+                    crop_rect = pygame.Rect(cx - 32, cy - 32, 64, 64)
+                    frame = sprite_sheet.subsurface(crop_rect).copy()
+                    frame = pygame.transform.scale(frame, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
+                    if frame.get_flags() & pygame.SRCALPHA:
+                        frame = frame.convert_alpha()
+                    else:
+                        bg = frame.get_at((0, 0))[:3]
+                        frame.set_colorkey(bg)
+                    self.gather_frames[direction].append(frame)
+        except Exception:
+            self.gather_frames = {d: [] for d in ['up', 'left', 'down', 'right']}
