@@ -3,7 +3,7 @@ import pygame
 
 from src.game_state import current_game_state
 from src.objects import Tree
-from src.villager.villager import WoodVillager
+from src.villager.villager import WoodVillager, FoodVillager
 
 class Agent():
 
@@ -84,7 +84,7 @@ class Agent():
 
         # Walk villager to tree if we have both
         if self.villager and self.tree:
-
+            
             if not self.villager.is_at_tree(self.tree):
                 self.villager.walk_to_tree(self.tree)
             else:
@@ -122,15 +122,31 @@ class Agent():
         if self.villager is None:
             self.pick_a_villager()
 
-            self.villager.__class__ = WoodVillager
-            self.villager.init_as_wood_villager()
+            self.villager.__class__ = FoodVillager
+            self.villager.init_as_food_villager()
 
         if self.berry_bush not in current_game_state.board.berry_bush_sprites:
             self.pick_closest_berry_bush()
 
+        # villager should return home if at max capacity
+        if self.villager.should_drop_food():
+            self.villager.walk_home_to_drop_food()
+
+            if self.villager.is_at_home():
+                self.villager.drop_food()
+            return
+
+        # Walk villager to berry bush if we have both
+        if self.villager and self.berry_bush:
+
+            if not self.villager.is_at_berry_bush(self.berry_bush):
+                self.villager.walk_to_berry_bush(self.berry_bush)
+            else:
+                self.villager.gathering_food(self.berry_bush)
+
     def run(self):
         
         self.action_chop_wood()
-        # self.action_gather_food()
+        self.action_gather_food()
 
 rl_agent = Agent()

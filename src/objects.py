@@ -11,8 +11,8 @@ class Tree(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (current_game_state.TILE_SIZE, current_game_state.TILE_SIZE))
         self.rect = self.image.get_rect(center=pos)
         self.id = id
-        self.wood = 25
-        self.max_wood = 25
+        self.wood = 10
+        self.max_wood = 10
 
     def reduce_wood(self, amount):
         """Reduce tree's wood by the specified amount"""
@@ -49,7 +49,7 @@ class BerryBush(pygame.sprite.Sprite):
         self.berries = 15
         self.max_berries = 15
 
-    def reduce_berries(self, amount):
+    def reduce_food(self, amount):
         """Reduce bush's berries by the specified amount"""
         self.berries = max(0, self.berries - amount)
         if self.berries <= 0:
