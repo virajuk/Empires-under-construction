@@ -147,6 +147,6 @@ class Agent():
     def run(self):
         
         self.action_chop_wood()
-        self.action_gather_food()
+        # self.action_gather_food()
 
 rl_agent = Agent()
