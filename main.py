@@ -28,7 +28,7 @@ class Game:
         current_game_state.MAP_NAME = map_name
 
         pygame.init()
-        panel_height = get_config('PANEL_HEIGHT', 48)
+        panel_height = get_config('PANEL_HEIGHT', 120)
         screen_height = current_game_state.HEIGHT + panel_height
         self.screen = pygame.display.set_mode((current_game_state.WIDTH, screen_height))
         pygame.display.set_caption(f"EMPIRES --Under Construction--")

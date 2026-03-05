@@ -17,62 +17,57 @@ def create_tree_patch(center, size):
 
     print(center, size, current_game_state.TILE_SIZE)
 
+# Line height for panel text (avoid overlap)
+PANEL_LINE_HEIGHT = 24
+
+
 def bottom_panel(display_surface):
-    
-    # Draw bottom panel in area settings.HEIGHT to config SCREEN_HEIGHT
-    panel_height = get_config('PANEL_HEIGHT', 48)
-    # screen_height = game_state.HEIGHT + panel_height
-    panel_rect = pygame.Rect(0, current_game_state.HEIGHT, current_game_state.WIDTH, panel_height)
+    base_y = current_game_state.HEIGHT
+    panel_height = get_config('PANEL_HEIGHT', 120)
+    panel_rect = pygame.Rect(0, base_y, current_game_state.WIDTH, panel_height)
     pygame.draw.rect(display_surface, (40, 40, 40), panel_rect)
-    pygame.draw.line(display_surface, (100, 100, 100), (0, current_game_state.HEIGHT), (current_game_state.WIDTH, current_game_state.HEIGHT), 2)
+    pygame.draw.line(display_surface, (100, 100, 100), (0, base_y), (current_game_state.WIDTH, base_y), 2)
 
     font = get_font(32)
-    score_text = font.render(f"Score: {math.ceil(current_game_state.score)}", True, (255, 255, 255))
-    display_surface.blit(score_text, (16, current_game_state.HEIGHT + 8))
+    line_y = base_y + 8
 
-    resource_text = font.render(f"Wood: {current_game_state.wood}", True, (255, 255, 255))
-    display_surface.blit(resource_text, (128, current_game_state.HEIGHT + 8))
+    # Line 0: Score, Wood, Food
+    display_surface.blit(font.render(f"Score: {math.ceil(current_game_state.score)}", True, (255, 255, 255)), (16, line_y))
+    display_surface.blit(font.render(f"Wood: {current_game_state.wood}", True, (255, 255, 255)), (128, line_y))
+    display_surface.blit(font.render(f"Food: {current_game_state.food}", True, (255, 255, 255)), (240, line_y))
+    line_y += PANEL_LINE_HEIGHT
 
-    resource_text = font.render(f"Food: {current_game_state.food}", True, (255, 255, 255))
-    display_surface.blit(resource_text, (240, current_game_state.HEIGHT + 8))
-    
-    go_for_a_berry_bush(display_surface)
+    # Right side of panel: villager carrying food/wood
+    right_padding = 16
+    panel_right_x = current_game_state.WIDTH - right_padding
 
-    # Show villager food carrying info
+    # Line 1: Villager carrying food (if any)
     if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'villager_sprites'):
-        for idx, villager in enumerate(current_game_state.board.villager_sprites):
+        for villager in current_game_state.board.villager_sprites:
             if hasattr(villager, 'food_carried') and villager.food_carried > 0:
-                villager_food_text = font.render(f"{villager.name} carrying Food: {villager.food_carried}/{villager.max_food_capacity}", True, (255, 255, 255))
-                display_surface.blit(villager_food_text, (16, current_game_state.HEIGHT + 48))
+                text_surf = font.render(f"{villager.name} carrying Food: {villager.food_carried}/{villager.max_food_capacity}", True, (255, 255, 255))
+                display_surface.blit(text_surf, (panel_right_x - text_surf.get_width(), line_y))
+                line_y += PANEL_LINE_HEIGHT
+                break
 
-    go_for_a_tree(display_surface)
-
-    # Show villager wood carrying info
+    # Line 2: Villager carrying wood (if any)
     if hasattr(current_game_state, 'board') and hasattr(current_game_state.board, 'villager_sprites'):
-        for idx, villager in enumerate(current_game_state.board.villager_sprites):
+        for villager in current_game_state.board.villager_sprites:
             if hasattr(villager, 'wood_carried') and villager.wood_carried > 0:
-                villager_wood_text = font.render(f"{villager.name} carrying Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
-                display_surface.blit(villager_wood_text, (16, current_game_state.HEIGHT + 48))
+                text_surf = font.render(f"{villager.name} carrying Wood: {villager.wood_carried}/{villager.max_wood_capacity}", True, (255, 255, 255))
+                display_surface.blit(text_surf, (panel_right_x - text_surf.get_width(), line_y))
+                line_y += PANEL_LINE_HEIGHT
+                break
 
-def go_for_a_tree(display_surface):
-
-    font = get_font(32)
-    if rl_agent.tree is not None:
-        agent_text_string = f"Agent Target Tree: {rl_agent.tree.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
-        agent_text = font.render(agent_text_string, True, (255, 255, 255))
-        display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 90))
-
-    # path = shortest_path(agent.villager.rect.center, agent.tree.rect.center, current_game_state.HEIGHT, current_game_state.WIDTH)
-    # path_text = font.render(f"Path: {path}", True, (255, 255, 255))
-    # display_surface.blit(path_text, (360, current_game_state.HEIGHT + 48))
-
-def go_for_a_berry_bush(display_surface):
-
-    font = get_font(32)
+    # Right side: agent targets (fixed Y, independent of villager carry lines above)
+    agent_right_y = base_y + 8
     if rl_agent.berry_bush is not None:
-        agent_text_string = f"Agent Target Berry Bush: {rl_agent.berry_bush.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}"
-        agent_text = font.render(agent_text_string, True, (255, 255, 255))
-        display_surface.blit(agent_text, (16, current_game_state.HEIGHT + 90))
+        text_surf = font.render(f"Agent Target Berry Bush: {rl_agent.berry_bush.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}", True, (255, 255, 255))
+        display_surface.blit(text_surf, (panel_right_x - text_surf.get_width(), agent_right_y))
+        agent_right_y += PANEL_LINE_HEIGHT
+    if rl_agent.tree is not None:
+        text_surf = font.render(f"Agent Target Tree: {rl_agent.tree.rect.center} Villager: {rl_agent.villager.name if rl_agent.villager else 'None'}", True, (255, 255, 255))
+        display_surface.blit(text_surf, (panel_right_x - text_surf.get_width(), agent_right_y))
 
 def get_tree_center_from_id(tree_id, tile_size):
 

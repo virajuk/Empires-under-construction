@@ -172,6 +172,12 @@ class Board:
                 if tree.wood < tree.max_wood:  # Only show if tree has been chopped
                     tree.draw_health_bar(self.display_surface)
 
+        # Draw health bars above berry bushes that have been chopped
+        for berry_bush in self.berry_bush_sprites:
+            if hasattr(berry_bush, 'draw_health_bar') and hasattr(berry_bush, 'berries') and hasattr(berry_bush, 'max_berries'):
+                if berry_bush.berries < berry_bush.max_berries:  # Only show if berry bush has been harvested
+                    berry_bush.draw_health_bar(self.display_surface)
+
     def run(self):
 
         # Update animation and movement
